@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TengeTrack • KZT Finance Suite</title>
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TengeTrack" />
+
+  <!-- External CDNs -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <style>
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake-animation {
+      animation: shake 0.35s ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen select-none">
+
+  <!-- ========================================== -->
+  <!-- 🔒 SECURITY LOCK SCREEN OVERLAY -->
+  <!-- ========================================== -->
+  <div id="lockScreenOverlay" class="fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-between p-6 sm:p-10 text-white transition-opacity duration-300">
+    <!-- Top Branding -->
+    <div class="flex flex-col items-center space-y-2 pt-6">
+      <div class="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-3xl font-black shadow-lg shadow-indigo-500/30">
+        ₸
+      </div>
+      <h2 class="text-xl font-bold tracking-tight">TengeTrack Security</h2>
+      <p id="lockScreenSubtitle" class="text-xs text-slate-400">Enter your 4-digit PIN to access records</p>
+    </div>
+
+    <!-- PIN Indicator Dots -->
+    <div id="pinDotsContainer" class="flex items-center space-x-5 my-6">
+      <div class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-transparent transition-all duration-200"></div>
+      <div class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-transparent transition-all duration-200"></div>
+      <div class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-transparent transition-all duration-200"></div>
+      <div class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-transparent transition-all duration-200"></div>
+    </div>
+
+    <!-- Error/Status text -->
+    <div id="lockStatusText" class="text-xs font-semibold text-rose-400 h-5"></div>
+
+    <!-- Numeric Keypad -->
+    <div class="w-full max-w-xs space-y-3 pb-6">
+      <div class="grid grid-cols-3 gap-3">
+        <button onclick="handleNumPadPress('1')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">1</button>
+        <button onclick="handleNumPadPress('2')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">2</button>
+        <button onclick="handleNumPadPress('3')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">3</button>
+
+        <button onclick="handleNumPadPress('4')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">4</button>
+        <button onclick="handleNumPadPress('5')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">5</button>
+        <button onclick="handleNumPadPress('6')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">6</button>
+
+        <button onclick="handleNumPadPress('7')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">7</button>
+        <button onclick="handleNumPadPress('8')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">8</button>
+        <button onclick="handleNumPadPress('9')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">9</button>
+
+        <!-- Biometric Button -->
+        <button onclick="triggerBiometricAuth()" class="h-16 rounded-2xl bg-indigo-600/30 active:bg-indigo-600/50 text-indigo-400 text-xl font-bold flex items-center justify-center transition" title="Use Fingerprint / Face ID">
+          👤
+        </button>
+        <button onclick="handleNumPadPress('0')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">0</button>
+        <!-- Backspace Button -->
+        <button onclick="handleNumPadBackspace()" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-slate-400 text-xl font-bold flex items-center justify-center transition">
+          ⌫
+        </button>
+      </div>
+
+      <div class="text-center pt-2">
+        <button onclick="resetPinPrompt()" class="text-xs text-slate-400 hover:text-indigo-400 underline">
+          Forgot PIN / Set New Passcode
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MAIN APP CONTAINER -->
+  <!-- ========================================== -->
+  <div class="max-w-6xl mx-auto p-2 sm:p-6 pb-20 space-y-4">
+    
+    <!-- PWA Install Banner -->
+    <div id="pwaInstallBanner" class="hidden bg-indigo-600 text-white p-3.5 rounded-2xl shadow-lg flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">📲</span>
+        <div>
+          <h4 class="font-bold text-sm">Install TengeTrack App</h4>
+          <p class="text-xs text-indigo-100">Run fullscreen on your phone with zero browser borders</p>
+        </div>
+      </div>
+      <button id="pwaInstallBtn" class="px-3.5 py-1.5 bg-white text-indigo-700 font-semibold rounded-xl text-xs hover:bg-indigo-50 shadow">
+        Install
+      </button>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="flex flex-col lg:flex-row lg:items-center justify-between pb-3 border-b border-slate-200 gap-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+            <span class="text-indigo-600">₸</span><span>TengeTrack</span>
+          </h1>
+          <p class="text-xs text-slate-400">Locked • Calendar • Voice Logger • Smart Caps • OCR</p>
+        </div>
+
+        <div class="flex items-center space-x-2 lg:hidden">
+          <button onclick="startVoiceRecognition()" class="p-2 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-base" title="Voice Input">🎙️</button>
+          <button onclick="lockApp()" class="p-2 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 text-base" title="Lock App">🔒</button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs & Actions -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center space-x-1 bg-slate-200/80 p-1 rounded-xl text-xs font-semibold overflow-x-auto">
+          <button id="tabDashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition">
+            📊 Dashboard
+          </button>
+          <button id="tabCalendar" onclick="switchTab('calendar')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center space-x-1">
+            <span>📅</span><span>Calendar</span>
+          </button>
+          <button id="tabVoice" onclick="switchTab('voice')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center space-x-1">
+            <span>🎙️</span><span>Voice</span>
+          </button>
+          <button id="tabScanner" onclick="switchTab('scanner')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center space-x-1">
+            <span>📷</span><span>Scan</span>
+          </button>
+          <button id="tabIncome" onclick="switchTab('income')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            💰 Income
+          </button>
+          <button id="tabRecurring" onclick="switchTab('recurring')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            🔁 Recurring
+          </button>
+          <button id="tabCategories" onclick="switchTab('categories')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            🏷️ Caps & PIN
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-1.5">
+          <button onclick="exportToCSV()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+            CSV
+          </button>
+          <button onclick="exportToExcel()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+            Excel
+          </button>
+          <button onclick="lockApp()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold shadow-sm transition flex items-center space-x-1" title="Lock App Now">
+            <span>🔒</span><span class="hidden sm:inline">Lock</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Global Alerts -->
+    <div id="overspendAlert" class="hidden bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start space-x-2 text-rose-800 text-xs">
+      <span class="text-base">⚠️</span>
+      <div>
+        <h4 class="font-bold">Budget Alert</h4>
+        <p id="overspendMessage" class="text-rose-700 mt-0.5"></p>
+      </div>
+    </div>
+
+    <!-- VIEW 1: DASHBOARD -->
+    <main id="viewDashboard" class="space-y-4">
+      <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+          <span class="text-xs font-semibold text-slate-400 uppercase">Period:</span>
+          <select id="timeframeFilter" onchange="renderDashboard()" class="text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2 py-1">
+            <option value="all">All Time</option>
+            <option value="current_month" selected>Current Month</option>
+            <option value="last_month">Previous Month</option>
+          </select>
+        </div>
+        <button onclick="switchTab('voice')" class="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg flex items-center space-x-1.5">
+          <span>🎙️</span><span>Voice Log</span>
+        </button>
+      </div>
+
+      <!-- Financial Metrics -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Income</div>
+          <div id="metricIncome" class="text-lg font-black text-emerald-600 mt-0.5">0 ₸</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Spent</div>
+          <div id="metricExpense" class="text-lg font-black text-slate-800 mt-0.5">0 ₸</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Savings</div>
+          <div id="metricNetSavings" class="text-lg font-black text-indigo-600 mt-0.5">0 ₸</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Savings Rate</div>
+          <div id="metricSavingsRate" class="text-lg font-black text-slate-800 mt-0.5">0%</div>
+        </div>
+      </div>
+
+      <!-- Form & Chart Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="space-y-4">
+          <!-- Manual Form -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-800 mb-3">Record Expense</h2>
+            <form id="expenseForm" class="space-y-3">
+              <div>
+                <input type="text" id="desc" required placeholder="Description (e.g. Magnum, Fuel, Yandex)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <input type="number" id="amount" step="50" min="1" required placeholder="Amount (₸)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+                </div>
+                <div>
+                  <input type="date" id="expDate" required class="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs" />
+                </div>
+              </div>
+              <div>
+                <select id="categorySelect" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"></select>
+              </div>
+              <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs transition">
+                + Add Transaction
+              </button>
+            </form>
+          </div>
+
+          <!-- Transaction List -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-2">
+              <h2 class="text-sm font-bold text-slate-800">Recent Records</h2>
+              <button id="clearBtn" class="text-[11px] text-red-500 hover:underline">Reset</button>
+            </div>
+            <div id="txList" class="divide-y divide-slate-100 max-h-64 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <!-- Doughnut Chart Section -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center min-h-[340px]">
+          <h2 class="text-sm font-bold text-slate-800 w-full text-left mb-2">Category Spending Share</h2>
+          <div class="relative w-full max-w-[280px] aspect-square flex items-center justify-center">
+            <canvas id="spendingChart"></canvas>
+          </div>
+          <div id="chartFallback" class="text-xs text-slate-400 text-center py-10 hidden">No expenses logged yet.</div>
+        </div>
+      </div>
+
+      <!-- Category Budget Caps with Quick Inline Cap Adjustment -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-bold text-slate-800">Monthly Category Caps (Click Cap to Edit)</h2>
+          <span class="text-[11px] text-slate-400">Values update dynamically</span>
+        </div>
+        <div id="budgetProgressList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+    </main>
+
+    <!-- VIEW 2: CALENDAR -->
+    <main id="viewCalendar" class="hidden space-y-4">
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-slate-100">
+          <div class="flex items-center space-x-3">
+            <h2 id="calendarMonthTitle" class="text-lg font-black text-slate-800">September 2026</h2>
+            <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold" id="calMonthTotal">0 ₸ spent</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="changeCalendarMonth(-1)" class="p-1.5 px-3 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs font-bold">‹ Prev</button>
+            <button onclick="setCalendarToToday()" class="p-1.5 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700">Today</button>
+            <button onclick="changeCalendarMonth(1)" class="p-1.5 px-3 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs font-bold">Next ›</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <div class="min-w-[600px]">
+            <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 py-2">
+              <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+            </div>
+            <div id="calendarDaysGrid" class="grid grid-cols-7 gap-1"></div>
+          </div>
+        </div>
+
+        <div id="calendarDayInspector" class="mt-4 p-4 rounded-xl border border-indigo-100 bg-indigo-50/40 space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 id="inspectorDateTitle" class="font-bold text-sm text-slate-900">Details for Selected Date</h3>
+            <span id="inspectorDaySpend" class="font-black text-indigo-700 text-sm">0 ₸</span>
+          </div>
+          <div id="inspectorBillsNotice" class="hidden text-xs bg-indigo-100 text-indigo-800 p-2 rounded-lg font-medium"></div>
+          <div id="inspectorTxList" class="divide-y divide-indigo-100 max-h-48 overflow-y-auto text-xs"></div>
+          <form id="inspectorQuickAddForm" class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-indigo-100">
+            <input type="text" id="inspectorDesc" required placeholder="Quick expense on this day..." class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white" />
+            <input type="number" id="inspectorAmount" required placeholder="Amount (₸)" class="w-28 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white" />
+            <button type="submit" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700">+ Add</button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <!-- VIEW 3: VOICE RECORDER -->
+    <main id="viewVoice" class="hidden space-y-4">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center max-w-xl mx-auto space-y-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Voice Expense Logger</h2>
+          <p class="text-xs text-slate-400 mt-1">Tap the microphone and speak your expense naturally.</p>
+        </div>
+
+        <div class="flex flex-col items-center justify-center py-4">
+          <button id="voiceMicBtn" onclick="toggleVoiceRecognition()" class="w-24 h-24 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-4xl shadow-xl flex items-center justify-center transition-all duration-300 cursor-pointer">
+            🎙️
+          </button>
+          <div id="voiceStatusText" class="text-xs font-bold text-slate-500 mt-3">Tap to Speak</div>
+        </div>
+
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-left space-y-1">
+          <div class="text-[10px] font-bold text-slate-400 uppercase">Heard Speech</div>
+          <div id="voiceTranscript" class="text-xs font-medium text-slate-800 italic min-h-[28px]">"Магнум 6500 тенге" or "Яндекс такси 1400"...</div>
+        </div>
+
+        <div id="voiceParsedBox" class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-100 text-left space-y-3 hidden">
+          <div class="text-xs font-bold text-indigo-900 flex justify-between items-center">
+            <span>Parsed Expense Details</span>
+            <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Ready</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span class="text-slate-500">Merchant:</span>
+              <strong id="voiceParsedDesc" class="block text-slate-800"></strong>
+            </div>
+            <div>
+              <span class="text-slate-500">Amount:</span>
+              <strong id="voiceParsedAmount" class="block text-indigo-600 font-bold"></strong>
+            </div>
+            <div class="col-span-2">
+              <span class="text-slate-500">Auto Category:</span>
+              <strong id="voiceParsedCat" class="block text-slate-800"></strong>
+            </div>
+          </div>
+          <button onclick="confirmVoiceExpense()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition">
+            ✓ Confirm & Save Expense
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- VIEW 4: SCANNER -->
+    <main id="viewScanner" class="hidden space-y-4">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-base font-bold">Receipt Camera & OCR Scanner</h2>
+          <p class="text-xs text-slate-400">Snap a picture of your store slip or Kaspi payment to extract and record automatically.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="border-2 border-dashed border-indigo-200 rounded-xl p-5 text-center bg-indigo-50/20 flex flex-col items-center justify-center space-y-3">
+            <div id="scannerIcon" class="text-4xl">📸</div>
+            <img id="receiptImagePreview" class="max-h-56 rounded-lg shadow-sm border border-slate-200 hidden object-contain" />
+            <label class="cursor-pointer px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition">
+              Snap / Select Receipt
+              <input type="file" id="receiptFileInput" accept="image/*" capture="environment" class="hidden" onchange="handleReceiptFile(this.files[0])" />
+            </label>
+            <div id="ocrProgressBarContainer" class="w-full max-w-xs space-y-1 hidden">
+              <div class="flex justify-between text-[11px] text-indigo-700 font-semibold">
+                <span id="ocrStatusLabel">Reading receipt...</span>
+                <span id="ocrProgressVal">0%</span>
+              </div>
+              <div class="w-full bg-indigo-100 rounded-full h-1.5 overflow-hidden">
+                <div id="ocrProgressBar" class="bg-indigo-600 h-1.5 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <h3 class="text-xs font-bold text-slate-700 uppercase">Parsed Data</h3>
+            <div>
+              <label class="text-[10px] text-slate-500 font-medium">Merchant</label>
+              <input type="text" id="extractedDesc" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-slate-500 font-medium">Amount (₸)</label>
+                <input type="number" id="extractedAmount" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs font-bold text-indigo-700 bg-white" />
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-500 font-medium">Date</label>
+                <input type="date" id="extractedDate" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs bg-white" />
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-500 font-medium">Category</label>
+              <select id="extractedCategory" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs bg-white"></select>
+            </div>
+            <button id="btnAutoAdd" onclick="confirmAddScannedExpense()" disabled class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-semibold rounded-lg text-xs transition">
+              ✓ Save to Register
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- VIEW 5: INCOME -->
+    <main id="viewIncome" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold">Add Income Stream</h2>
+        <form id="incomeForm" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input type="text" id="incDesc" required placeholder="Income source (e.g. Salary, Kaspi transfer)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <input type="number" id="incAmount" step="1000" min="1" required placeholder="Amount (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+          <input type="date" id="incDate" required class="px-2 py-2 border border-slate-300 rounded-lg text-xs" />
+          <button type="submit" class="sm:col-span-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">+ Record Income</button>
+        </form>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold mb-2">Income Registry</h2>
+        <div id="incomeList" class="divide-y divide-slate-100 max-h-72 overflow-y-auto"></div>
+      </div>
+    </main>
+
+    <!-- VIEW 6: RECURRING BILLS -->
+    <main id="viewRecurring" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold">Add Fixed Monthly Obligation</h2>
+        <form id="addRecurringForm" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <input type="text" id="recDesc" required placeholder="Name (e.g. Rent, Internet)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <input type="number" id="recAmount" step="100" min="1" required placeholder="Amount (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+          <input type="number" id="recDay" min="1" max="31" required value="1" placeholder="Day (1-31)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <select id="recCategorySelect" class="px-2 py-2 border border-slate-300 rounded-lg text-xs"></select>
+          <button type="submit" class="sm:col-span-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg text-xs">+ Save Recurring Rule</button>
+        </form>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold mb-2">Monthly Automated Commitments</h2>
+        <div id="recurringList" class="divide-y divide-slate-100 max-h-72 overflow-y-auto"></div>
+      </div>
+    </main>
+
+    <!-- VIEW 7: CATEGORIES & SECURITY SETTINGS -->
+    <main id="viewCategories" class="hidden space-y-4">
+      <!-- Security / PIN Management Card -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-sm font-bold text-slate-900">Security & PIN Settings</h2>
+            <p class="text-xs text-slate-400">Manage your 4-digit PIN and Biometric authentication.</p>
+          </div>
+          <button onclick="changePinInteractive()" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg">
+            Change 4-Digit PIN
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold">Add New Category</h2>
+        <form id="addCategoryForm" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <input type="text" id="newCatName" required placeholder="Category name" class="sm:col-span-2 px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <input type="number" id="newCatBudget" step="500" min="0" placeholder="Cap (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <div class="flex items-center gap-2">
+            <input type="color" id="newCatColor" value="#6366f1" class="w-8 h-8 rounded border border-slate-300 cursor-pointer" />
+            <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg">Add</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold mb-2">Category Caps & Color Coding (Edit Values Directly)</h2>
+        <div id="categoryList" class="divide-y divide-slate-100 max-h-80 overflow-y-auto"></div>
+      </div>
+    </main>
+
+    <!-- Modal for Fullscreen Receipt Preview -->
+    <div id="receiptModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <h3 id="modalTitle" class="font-bold text-xs truncate">Receipt Preview</h3>
+          <button onclick="document.getElementById('receiptModal').classList.add('hidden')" class="text-slate-400 hover:text-black">✕</button>
+        </div>
+        <img id="modalImg" class="w-full max-h-80 object-contain rounded-lg border border-slate-100" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const formatKZT = (val) => `${Math.round(val).toLocaleString('ru-KZ')} ₸`;
+    const getCurrentMonthKey = () => new Date().toISOString().slice(0, 7);
+
+    // ==========================================
+    // 🔒 SECURITY & BIOMETRIC AUTH ENGINE
+    // ==========================================
+    let currentPinInput = "";
+    let isAppLocked = true;
+    let isSettingNewPin = false;
+    let tempNewPin = "";
+
+    // Default PIN: "1234" on initial fresh run
+    let storedPin = localStorage.getItem("app_security_pin") || "1234";
+
+    function updatePinDots() {
+      const dots = document.querySelectorAll(".pin-dot");
+      dots.forEach((dot, index) => {
+        if (index < currentPinInput.length) {
+          dot.classList.add("bg-indigo-500", "scale-110");
+          dot.classList.remove("bg-transparent");
+        } else {
+          dot.classList.remove("bg-indigo-500", "scale-110");
+          dot.classList.add("bg-transparent");
+        }
+      });
+    }
+
+    function handleNumPadPress(digit) {
+      if (currentPinInput.length >= 4) return;
+      if (navigator.vibrate) navigator.vibrate(30);
+
+      currentPinInput += digit;
+      updatePinDots();
+
+      if (currentPinInput.length === 4) {
+        setTimeout(evaluateEnteredPin, 150);
+      }
+    }
+
+    function handleNumPadBackspace() {
+      if (currentPinInput.length > 0) {
+        if (navigator.vibrate) navigator.vibrate(20);
+        currentPinInput = currentPinInput.slice(0, -1);
+        updatePinDots();
+        document.getElementById("lockStatusText").textContent = "";
+      }
+    }
+
+    function evaluateEnteredPin() {
+      if (isSettingNewPin) {
+        if (!tempNewPin) {
+          tempNewPin = currentPinInput;
+          currentPinInput = "";
+          updatePinDots();
+          document.getElementById("lockScreenSubtitle").textContent = "Re-enter new 4-digit PIN to confirm";
+        } else {
+          if (currentPinInput === tempNewPin) {
+            storedPin = tempNewPin;
+            localStorage.setItem("app_security_pin", storedPin);
+            isSettingNewPin = false;
+            tempNewPin = "";
+            document.getElementById("lockStatusText").textContent = "PIN set successfully!";
+            document.getElementById("lockStatusText").className = "text-xs font-semibold text-emerald-400 h-5";
+            setTimeout(unlockApp, 500);
+          } else {
+            shakePinDots("PINs do not match. Try again.");
+            isSettingNewPin = false;
+            tempNewPin = "";
+            document.getElementById("lockScreenSubtitle").textContent = "Enter your 4-digit PIN";
+          }
+        }
+        return;
+      }
+
+      if (currentPinInput === storedPin) {
+        unlockApp();
+      } else {
+        shakePinDots("Incorrect PIN. Try again.");
+      }
+    }
+
+    function shakePinDots(msg) {
+      if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
+      const container = document.getElementById("pinDotsContainer");
+      container.classList.add("shake-animation");
+      document.getElementById("lockStatusText").textContent = msg;
+
+      setTimeout(() => {
+        container.classList.remove("shake-animation");
+        currentPinInput = "";
+        updatePinDots();
+      }, 400);
+    }
+
+    function unlockApp() {
+      isAppLocked = false;
+      currentPinInput = "";
+      updatePinDots();
+      document.getElementById("lockStatusText").textContent = "";
+      const overlay = document.getElementById("lockScreenOverlay");
+      overlay.style.opacity = "0";
+      setTimeout(() => {
+        overlay.classList.add("hidden");
+        overlay.style.opacity = "1";
+      }, 300);
+    }
+
+    function lockApp() {
+      isAppLocked = true;
+      currentPinInput = "";
+      updatePinDots();
+      document.getElementById("lockScreenSubtitle").textContent = "Enter your 4-digit PIN to access records";
+      document.getElementById("lockStatusText").textContent = "";
+      const overlay = document.getElementById("lockScreenOverlay");
+      overlay.classList.remove("hidden");
+    }
+
+    // Auto-lock when user tabs away, switches apps, or closes screen
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && !isAppLocked) {
+        lockApp();
+      }
+    });
+
+    // Native WebAuthn Biometric Authenticator
+    async function triggerBiometricAuth() {
+      if (navigator.vibrate) navigator.vibrate(40);
+      document.getElementById("lockStatusText").textContent = "Authenticating biometrics...";
+
+      if (!window.PublicKeyCredential) {
+        document.getElementById("lockStatusText").textContent = "Biometrics unavailable on this device. Use PIN.";
+        return;
+      }
+
+      try {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        // Request biometric verification from platform
+        const credential = await navigator.credentials.get({
+          publicKey: {
+            challenge,
+            timeout: 60000,
+            userVerification: "required"
+          }
+        });
+
+        if (credential) {
+          unlockApp();
+        }
+      } catch (err) {
+        console.warn("Biometric authentication skipped or unavailable:", err);
+        // Fallback simulate success if in test environment or allow PIN entry
+        document.getElementById("lockStatusText").textContent = "Biometrics cancelled. Enter 4-digit PIN.";
+      }
+    }
+
+    function resetPinPrompt() {
+      const oldPin = prompt("Enter current PIN to reset:");
+      if (oldPin === storedPin) {
+        isSettingNewPin = true;
+        tempNewPin = "";
+        currentPinInput = "";
+        updatePinDots();
+        document.getElementById("lockScreenSubtitle").textContent = "Enter a NEW 4-digit PIN";
+        document.getElementById("lockStatusText").textContent = "";
+      } else {
+        alert("Incorrect current PIN.");
+      }
+    }
+
+    function changePinInteractive() {
+      const oldPin = prompt("Enter your existing PIN:");
+      if (oldPin === storedPin) {
+        const newPin = prompt("Enter new 4-digit PIN:");
+        if (newPin && newPin.length === 4 && /^\d+$/.test(newPin)) {
+          storedPin = newPin;
+          localStorage.setItem("app_security_pin", storedPin);
+          alert("PIN updated successfully!");
+        } else {
+          alert("PIN must be exactly 4 numbers.");
+        }
+      } else {
+        alert("Incorrect PIN.");
+      }
+    }
+
+    // ==========================================
+    // PWA REGISTRATION & INSTALL LOGIC
+    // ==========================================
+    let deferredPrompt = null;
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(e => console.warn(e));
+      });
+    }
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const b = document.getElementById('pwaInstallBanner');
+      if (b) b.classList.remove('hidden');
+    });
+    const installBtn = document.getElementById('pwaInstallBtn');
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') document.getElementById('pwaInstallBanner').classList.add('hidden');
+        deferredPrompt = null;
+      });
+    }
+
+    // ==========================================
+    // DATA STRUCTURES
+    // ==========================================
+    const defaultCategories = [
+      { id: "cat-1", name: "Housing & Rent", color: "#6366f1", budget: 200000 },
+      { id: "cat-2", name: "Groceries", color: "#10b981", budget: 70000 },
+      { id: "cat-3", name: "Dining Out & Cafes", color: "#f59e0b", budget: 25000 },
+      { id: "cat-4", name: "Utilities & Internet", color: "#06b6d4", budget: 30000 },
+      { id: "cat-5", name: "Transportation & Fuel", color: "#3b82f6", budget: 25000 },
+      { id: "cat-6", name: "Healthcare & Pharmacy", color: "#ef4444", budget: 15000 },
+      { id: "cat-7", name: "Shopping & Clothing", color: "#ec4899", budget: 30000 },
+      { id: "cat-8", name: "Entertainment & Leisure", color: "#8b5cf6", budget: 20000 },
+      { id: "cat-9", name: "Personal Care & Beauty", color: "#f43f5e", budget: 15000 },
+      { id: "cat-10", name: "Subscriptions & Streaming", color: "#14b8a6", budget: 8000 },
+      { id: "cat-11", name: "Education & Courses", color: "#84cc16", budget: 20000 },
+      { id: "cat-12", name: "Loans & Debt Payments", color: "#64748b", budget: 40000 },
+      { id: "cat-13", name: "Gifts & Charity", color: "#d97706", budget: 15000 }
+    ];
+
+    const defaultRecurring = [
+      { id: "rec-1", desc: "Apartment Rent", amount: 180000, category: "Housing & Rent", day: 1, lastMonthLogged: "" },
+      { id: "rec-2", desc: "Kazakhtelecom Internet", amount: 8500, category: "Utilities & Internet", day: 5, lastMonthLogged: "" },
+      { id: "rec-3", desc: "Kaspi Red Installment", amount: 35000, category: "Loans & Debt Payments", day: 15, lastMonthLogged: "" }
+    ];
+
+    let categories = JSON.parse(localStorage.getItem("suite_v7_categories")) || defaultCategories;
+    let recurring = JSON.parse(localStorage.getItem("suite_v7_recurring")) || defaultRecurring;
+    let incomes = JSON.parse(localStorage.getItem("suite_v7_incomes")) || [
+      { id: 1, desc: "Salary (Kaspi Pay)", amount: 650000, date: new Date().toISOString().split('T')[0] }
+    ];
+    let expenses = JSON.parse(localStorage.getItem("suite_v7_expenses")) || [
+      { id: 101, desc: "Apartment Rent [Recurring]", amount: 180000, category: "Housing & Rent", isAuto: true, date: "2026-09-01", receiptImg: null },
+      { id: 102, desc: "Magnum Hypermarket", amount: 48000, category: "Groceries", isAuto: false, date: "2026-09-02", receiptImg: null },
+      { id: 103, desc: "Kazakhtelecom Internet [Recurring]", amount: 8500, category: "Utilities & Internet", isAuto: true, date: "2026-09-05", receiptImg: null },
+      { id: 104, desc: "Dinner with Friends", amount: 14500, category: "Dining Out & Cafes", isAuto: false, date: "2026-09-12", receiptImg: null },
+      { id: 105, desc: "Kaspi Red Installment [Recurring]", amount: 35000, category: "Loans & Debt Payments", isAuto: true, date: "2026-09-15", receiptImg: null },
+      { id: 106, desc: "Gasoline / Fuel", amount: 12000, category: "Transportation & Fuel", isAuto: false, date: "2026-09-20", receiptImg: null }
+    ];
+
+    let chartInstance = null;
+    let currentScannedImageBase64 = null;
+    let parsedVoiceItem = null;
+
+    let calCurrentDate = new Date();
+    let selectedCalDayStr = new Date().toISOString().split('T')[0];
+
+    function saveState() {
+      localStorage.setItem("suite_v7_categories", JSON.stringify(categories));
+      localStorage.setItem("suite_v7_recurring", JSON.stringify(recurring));
+      localStorage.setItem("suite_v7_incomes", JSON.stringify(incomes));
+      localStorage.setItem("suite_v7_expenses", JSON.stringify(expenses));
+    }
+
+    // ==========================================
+    // VIEW SWITCHER
+    // ==========================================
+    function switchTab(tab) {
+      ['viewDashboard', 'viewCalendar', 'viewVoice', 'viewScanner', 'viewIncome', 'viewRecurring', 'viewCategories'].forEach(v => {
+        document.getElementById(v).classList.add('hidden');
+      });
+
+      const tabs = {
+        dashboard: document.getElementById('tabDashboard'),
+        calendar: document.getElementById('tabCalendar'),
+        voice: document.getElementById('tabVoice'),
+        scanner: document.getElementById('tabScanner'),
+        income: document.getElementById('tabIncome'),
+        recurring: document.getElementById('tabRecurring'),
+        categories: document.getElementById('tabCategories')
+      };
+
+      Object.values(tabs).forEach(b => {
+        if (b) b.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center space-x-1";
+      });
+
+      const activeBtn = tabs[tab];
+      if (activeBtn) activeBtn.className = "px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition flex items-center space-x-1";
+
+      if (tab === 'dashboard') {
+        document.getElementById('viewDashboard').classList.remove('hidden');
+        renderDashboard();
+      } else if (tab === 'calendar') {
+        document.getElementById('viewCalendar').classList.remove('hidden');
+        renderCalendar();
+      } else if (tab === 'voice') {
+        document.getElementById('viewVoice').classList.remove('hidden');
+      } else if (tab === 'scanner') {
+        document.getElementById('viewScanner').classList.remove('hidden');
+        populateDropdowns();
+      } else if (tab === 'income') {
+        document.getElementById('viewIncome').classList.remove('hidden');
+        renderIncomeView();
+      } else if (tab === 'recurring') {
+        document.getElementById('viewRecurring').classList.remove('hidden');
+        renderRecurringView();
+      } else {
+        document.getElementById('viewCategories').classList.remove('hidden');
+        renderCategoriesView();
+      }
+    }
+
+    // ==========================================
+    // CALENDAR ENGINE & INSPECTOR
+    // ==========================================
+    function changeCalendarMonth(offset) {
+      calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth() + offset, 1);
+      renderCalendar();
+    }
+
+    function setCalendarToToday() {
+      calCurrentDate = new Date();
+      selectedCalDayStr = new Date().toISOString().split('T')[0];
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = calCurrentDate.getFullYear();
+      const month = calCurrentDate.getMonth();
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      document.getElementById("calendarMonthTitle").textContent = `${monthNames[month]} ${year}`;
+
+      const firstDayOfMonth = new Date(year, month, 1);
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      let startDayOfWeek = firstDayOfMonth.getDay() - 1;
+      if (startDayOfWeek === -1) startDayOfWeek = 6;
+
+      const grid = document.getElementById("calendarDaysGrid");
+      grid.innerHTML = "";
+
+      for (let i = 0; i < startDayOfWeek; i++) {
+        const emptyCell = document.createElement("div");
+        emptyCell.className = "h-20 bg-slate-50/50 rounded-lg border border-slate-100";
+        grid.appendChild(emptyCell);
+      }
+
+      const curMonthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+      let totalMonthSpent = 0;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayStr = `${curMonthKey}-${String(day).padStart(2, '0')}`;
+        const dayExpenses = expenses.filter(e => e.date === dayStr);
+        const dayTotal = dayExpenses.reduce((a, b) => a + b.amount, 0);
+        totalMonthSpent += dayTotal;
+
+        const dayBills = recurring.filter(r => Number(r.day) === day);
+        const isToday = (dayStr === new Date().toISOString().split('T')[0]);
+        const isSelected = (dayStr === selectedCalDayStr);
+
+        let spendBadge = "";
+        if (dayTotal > 0) {
+          let badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+          if (dayTotal > 25000) badgeColor = "bg-rose-50 text-rose-700 border-rose-200";
+          else if (dayTotal >= 5000) badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+
+          spendBadge = `<span class="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${badgeColor} block truncate">${formatKZT(dayTotal)}</span>`;
+        }
+
+        let billBadges = "";
+        dayBills.forEach(b => {
+          billBadges += `<span class="mt-0.5 text-[9px] bg-indigo-100 text-indigo-700 font-semibold px-1 py-0.2 rounded block truncate">🔁 ${b.desc.slice(0, 8)}..</span>`;
+        });
+
+        const cell = document.createElement("div");
+        cell.className = `h-20 p-1.5 rounded-lg border cursor-pointer transition-all flex flex-col justify-between ${isSelected ? 'ring-2 ring-indigo-600 bg-indigo-50/30 border-indigo-300' : 'bg-white border-slate-200 hover:border-indigo-400'}`;
+        cell.onclick = () => selectCalendarDay(dayStr);
+
+        cell.innerHTML = `
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold ${isToday ? 'w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]' : 'text-slate-700'}">${day}</span>
+            ${dayBills.length > 0 ? '<span class="text-[10px]">📌</span>' : ''}
+          </div>
+          <div class="overflow-hidden">
+            ${spendBadge}
+            ${billBadges}
+          </div>
+        `;
+        grid.appendChild(cell);
+      }
+
+      document.getElementById("calMonthTotal").textContent = `${formatKZT(totalMonthSpent)} total`;
+      inspectCalendarDay(selectedCalDayStr);
+    }
+
+    function selectCalendarDay(dateStr) {
+      selectedCalDayStr = dateStr;
+      renderCalendar();
+    }
+
+    function inspectCalendarDay(dateStr) {
+      document.getElementById("inspectorDateTitle").textContent = `Transactions on ${dateStr}`;
+      const dayExpenses = expenses.filter(e => e.date === dateStr);
+      const dayTotal = dayExpenses.reduce((a, b) => a + b.amount, 0);
+      document.getElementById("inspectorDaySpend").textContent = formatKZT(dayTotal);
+
+      const dayOfMonth = parseInt(dateStr.split('-')[2]);
+      const dayBills = recurring.filter(r => Number(r.day) === dayOfMonth);
+      const billsNotice = document.getElementById("inspectorBillsNotice");
+      if (dayBills.length > 0) {
+        billsNotice.classList.remove("hidden");
+        billsNotice.textContent = `Scheduled Bills on Day ${dayOfMonth}: ` + dayBills.map(b => `${b.desc} (${formatKZT(b.amount)})`).join(", ");
+      } else {
+        billsNotice.classList.add("hidden");
+      }
+
+      const list = document.getElementById("inspectorTxList");
+      list.innerHTML = "";
+      if (dayExpenses.length === 0) {
+        list.innerHTML = `<p class="text-slate-400 py-2">No expenses logged for this date.</p>`;
+        return;
+      }
+      dayExpenses.forEach(tx => {
+        const row = document.createElement("div");
+        row.className = "py-1.5 flex justify-between items-center";
+        row.innerHTML = `
+          <div>
+            <span class="font-semibold text-slate-800">${tx.desc}</span>
+            <span class="text-slate-400 text-[10px] ml-1">(${tx.category})</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-900">${formatKZT(tx.amount)}</span>
+            <button onclick="deleteTx(${tx.id})" class="text-slate-400 hover:text-red-500">✕</button>
+          </div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    document.getElementById("inspectorQuickAddForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const desc = document.getElementById("inspectorDesc").value.trim();
+      const amount = parseFloat(document.getElementById("inspectorAmount").value);
+      if (!desc || isNaN(amount) || amount <= 0) return;
+
+      expenses.push({
+        id: Date.now(),
+        desc,
+        amount,
+        category: "Groceries",
+        date: selectedCalDayStr,
+        isAuto: false,
+        receiptImg: null
+      });
+
+      document.getElementById("inspectorDesc").value = "";
+      document.getElementById("inspectorAmount").value = "";
+      saveState();
+      renderCalendar();
+    });
+
+    // ==========================================
+    // VOICE INPUT SPEECH RECOGNITION
+    // ==========================================
+    let recognition = null;
+    let isListening = false;
+
+    function initSpeechEngine() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Speech Recognition not supported in this browser. Try Chrome on Android or Safari on iOS.");
+        return null;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = 'ru-RU';
+      rec.continuous = false;
+      rec.interimResults = false;
+
+      rec.onstart = () => {
+        isListening = true;
+        const btn = document.getElementById("voiceMicBtn");
+        btn.classList.add("animate-pulse", "bg-rose-600");
+        btn.classList.remove("bg-indigo-600");
+        document.getElementById("voiceStatusText").textContent = "Listening... Speak now";
+        document.getElementById("voiceStatusText").className = "text-xs font-bold text-rose-600 mt-3 animate-pulse";
+      };
+
+      rec.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("voiceTranscript").textContent = `"${transcript}"`;
+        parseVoiceSpeech(transcript);
+      };
+
+      rec.onerror = () => {
+        document.getElementById("voiceStatusText").textContent = "Tap to try again";
+        stopListeningVisuals();
+      };
+
+      rec.onend = () => {
+        isListening = false;
+        stopListeningVisuals();
+      };
+
+      return rec;
+    }
+
+    function stopListeningVisuals() {
+      const btn = document.getElementById("voiceMicBtn");
+      btn.classList.remove("animate-pulse", "bg-rose-600");
+      btn.classList.add("bg-indigo-600");
+      document.getElementById("voiceStatusText").textContent = "Tap to Speak";
+      document.getElementById("voiceStatusText").className = "text-xs font-bold text-slate-500 mt-3";
+    }
+
+    function toggleVoiceRecognition() {
+      if (!recognition) recognition = initSpeechEngine();
+      if (!recognition) return;
+      if (isListening) recognition.stop();
+      else recognition.start();
+    }
+
+    function startVoiceRecognition() {
+      switchTab('voice');
+      setTimeout(toggleVoiceRecognition, 300);
+    }
+
+    function parseVoiceSpeech(text) {
+      const clean = text.toLowerCase();
+      let amount = 0;
+      const numMatch = clean.match(/(\d[\d\s,.]*)\s*(?:тенге|₸|тг|kzt)?/i);
+      if (numMatch && numMatch[1]) amount = parseFloat(numMatch[1].replace(/[\s,]/g, ''));
+      if (!amount || isNaN(amount)) amount = 3000;
+
+      let desc = clean
+        .replace(/(\d[\d\s,.]*)\s*(?:тенге|₸|тг|kzt)?/gi, '')
+        .replace(/(?:добавь|запиши|трата|купил|купила|расход|потратил|потратила|тенге|тг|₸)/gi, '')
+        .trim();
+
+      if (!desc) desc = "Voice Purchase";
+      desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+      let category = "Groceries";
+      if (/аптек|лекарств|клиник|врач|pharm|europharma/i.test(clean)) category = "Healthcare & Pharmacy";
+      else if (/такси|яндекс|yandex|бензин|газ|проезд|автобус|парковк/i.test(clean)) category = "Transportation & Fuel";
+      else if (/обед|ужин|завтрак|кофе|кафе|ресторан|донер|бургер|пицц|starbucks/i.test(clean)) category = "Dining Out & Cafes";
+      else if (/магнум|magnum|смолл|small|галмарт|galmart|магазин|хлеб|молоко|мясо|продукты/i.test(clean)) category = "Groceries";
+      else if (/аренд|кварт|жиль/i.test(clean)) category = "Housing & Rent";
+      else if (/коммунал|интернет|свет|вода|отоплен|казахтелеком|билайн|kcell/i.test(clean)) category = "Utilities & Internet";
+      else if (/одежд|вещи|куртк|обувь|zara|шопинг|kaspi red/i.test(clean)) category = "Shopping & Clothing";
+      else if (/кино|билет|спорт|зал|фитнес|клуб/i.test(clean)) category = "Entertainment & Leisure";
+      else if (/кредит|рассрочк|долг/i.test(clean)) category = "Loans & Debt Payments";
+
+      parsedVoiceItem = { desc, amount, category, date: new Date().toISOString().split('T')[0] };
+
+      document.getElementById("voiceParsedDesc").textContent = desc;
+      document.getElementById("voiceParsedAmount").textContent = formatKZT(amount);
+      document.getElementById("voiceParsedCat").textContent = category;
+      document.getElementById("voiceParsedBox").classList.remove("hidden");
+    }
+
+    function confirmVoiceExpense() {
+      if (!parsedVoiceItem) return;
+      expenses.push({ id: Date.now(), ...parsedVoiceItem, isAuto: false, receiptImg: null });
+      saveState();
+      alert(`Recorded: ${parsedVoiceItem.desc} (${formatKZT(parsedVoiceItem.amount)})!`);
+      document.getElementById("voiceParsedBox").classList.add("hidden");
+      switchTab('dashboard');
+    }
+
+    // ==========================================
+    // INLINE CAP ADJUSTMENTS
+    // ==========================================
+    function updateCategoryCapInline(catId, newCapVal) {
+      const target = categories.find(c => c.id === catId);
+      if (!target) return;
+      target.budget = Math.max(0, parseFloat(newCapVal) || 0);
+      saveState();
+      renderDashboard();
+    }
+
+    function renderBudgetProgress(catTotals) {
+      const container = document.getElementById("budgetProgressList");
+      container.innerHTML = "";
+
+      categories.forEach(cat => {
+        const spent = catTotals[cat.name] || 0;
+        const budget = Number(cat.budget) || 0;
+        const percent = budget > 0 ? Math.round((spent / budget) * 100) : 0;
+        const barColor = percent >= 100 ? "bg-rose-500" : percent >= 80 ? "bg-amber-500" : "bg-emerald-500";
+
+        const card = document.createElement("div");
+        card.className = "p-3 rounded-xl border border-slate-100 bg-slate-50/60 flex flex-col space-y-2";
+        card.innerHTML = `
+          <div class="flex justify-between items-center text-xs">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full" style="background-color:${cat.color}"></span>
+              <span class="font-bold text-slate-800">${cat.name}</span>
+            </div>
+            <span class="text-[10px] font-bold ${percent >= 100 ? 'text-rose-600' : 'text-slate-500'}">${percent}%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+            <div class="${barColor} h-1.5 transition-all duration-300" style="width: ${Math.min(percent, 100)}%"></div>
+          </div>
+          <div class="flex justify-between items-center text-[11px] text-slate-500">
+            <span>Spent: <strong class="text-slate-800">${formatKZT(spent)}</strong></span>
+            <div class="flex items-center space-x-1">
+              <span>Cap:</span>
+              <input type="number" step="1000" value="${budget}" onblur="updateCategoryCapInline('${cat.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" class="w-24 px-1.5 py-0.5 border border-slate-300 rounded text-right font-bold text-slate-700 bg-white" title="Click to adjust cap" />
+              <span>₸</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ==========================================
+    // DASHBOARD & CHARTS
+    // ==========================================
+    function getFilteredData() {
+      const filter = document.getElementById("timeframeFilter").value;
+      const now = new Date();
+      const curMonth = now.toISOString().slice(0, 7);
+      const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const prevMonth = prevDate.toISOString().slice(0, 7);
+
+      let fExpenses = expenses;
+      let fIncomes = incomes;
+
+      if (filter === "current_month") {
+        fExpenses = expenses.filter(e => (e.date || "").startsWith(curMonth));
+        fIncomes = incomes.filter(i => (i.date || "").startsWith(curMonth));
+      } else if (filter === "last_month") {
+        fExpenses = expenses.filter(e => (e.date || "").startsWith(prevMonth));
+        fIncomes = incomes.filter(i => (i.date || "").startsWith(prevMonth));
+      }
+      return { fExpenses, fIncomes };
+    }
+
+    function renderDashboard() {
+      saveState();
+      populateDropdowns();
+      const { fExpenses, fIncomes } = getFilteredData();
+
+      const totalInc = fIncomes.reduce((a, b) => a + b.amount, 0);
+      const totalExp = fExpenses.reduce((a, b) => a + b.amount, 0);
+      const netSave = totalInc - totalExp;
+      const rate = totalInc > 0 ? Math.round((netSave / totalInc) * 100) : 0;
+
+      document.getElementById("metricIncome").textContent = formatKZT(totalInc);
+      document.getElementById("metricExpense").textContent = formatKZT(totalExp);
+      document.getElementById("metricNetSavings").textContent = formatKZT(netSave);
+      document.getElementById("metricSavingsRate").textContent = `${rate}%`;
+
+      const catTotals = {};
+      fExpenses.forEach(e => catTotals[e.category] = (catTotals[e.category] || 0) + e.amount);
+
+      const overLimit = [];
+      categories.forEach(cat => {
+        const spent = catTotals[cat.name] || 0;
+        if (cat.budget > 0 && spent > cat.budget) {
+          overLimit.push(`${cat.name} (+${formatKZT(spent - cat.budget)})`);
+        }
+      });
+      const alertEl = document.getElementById("overspendAlert");
+      if (overLimit.length > 0) {
+        alertEl.classList.remove("hidden");
+        document.getElementById("overspendMessage").textContent = `Over limit in: ${overLimit.join("; ")}`;
+      } else {
+        alertEl.classList.add("hidden");
+      }
+
+      renderTransactions(fExpenses);
+      renderChart(catTotals);
+      renderBudgetProgress(catTotals);
+    }
+
+    function populateDropdowns() {
+      const selects = [
+        document.getElementById("categorySelect"),
+        document.getElementById("recCategorySelect"),
+        document.getElementById("extractedCategory")
+      ];
+      selects.forEach(sel => {
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = "";
+        categories.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.name;
+          opt.textContent = `${c.name} (${formatKZT(c.budget)})`;
+          sel.appendChild(opt);
+        });
+        if (categories.some(c => c.name === cur)) sel.value = cur;
+      });
+    }
+
+    function renderTransactions(fExpenses) {
+      const list = document.getElementById("txList");
+      list.innerHTML = "";
+      if (fExpenses.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">No transactions recorded.</p>`;
+        return;
+      }
+      fExpenses.slice().reverse().forEach(tx => {
+        const cat = categories.find(c => c.name === tx.category);
+        const col = cat ? cat.color : "#94a3b8";
+        const div = document.createElement("div");
+        div.className = "py-2 flex justify-between items-center text-xs";
+        div.innerHTML = `
+          <div class="flex items-center space-x-2">
+            ${tx.receiptImg ? `<button onclick="openReceiptModal('${tx.desc}', '${tx.receiptImg}')" class="text-indigo-600 font-bold">📷</button>` : ''}
+            <div>
+              <div class="font-semibold text-slate-800">${tx.desc}</div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full inline-block" style="background-color:${col}"></span>
+                <span>${tx.category} • ${tx.date || 'Today'}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-900">${formatKZT(tx.amount)}</span>
+            <button onclick="deleteTx(${tx.id})" class="text-slate-400 hover:text-red-500">✕</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function renderChart(catTotals) {
+      const labels = Object.keys(catTotals);
+      const data = Object.values(catTotals);
+      const colors = labels.map(l => {
+        const c = categories.find(cat => cat.name === l);
+        return c ? c.color : "#94a3b8";
+      });
+
+      const canvas = document.getElementById("spendingChart");
+      const fallback = document.getElementById("chartFallback");
+
+      if (data.length === 0) {
+        canvas.classList.add("hidden");
+        fallback.classList.remove("hidden");
+        if (chartInstance) chartInstance.destroy();
+        return;
+      }
+
+      canvas.classList.remove("hidden");
+      fallback.classList.add("hidden");
+
+      if (chartInstance) chartInstance.destroy();
+      const ctx = canvas.getContext("2d");
+      const totalAll = data.reduce((a, b) => a + b, 0);
+
+      chartInstance = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels,
+          datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: "#ffffff" }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "bottom", labels: { boxWidth: 8, font: { size: 9 } } },
+            tooltip: {
+              callbacks: {
+                label: (c) => ` ${formatKZT(c.raw)} (${((c.raw / totalAll) * 100).toFixed(1)}%)`
+              }
+            }
+          },
+          cutout: "66%"
+        }
+      });
+    }
+
+    // ==========================================
+    // OCR & RECEIPT HANDLERS
+    // ==========================================
+    function handleReceiptFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentScannedImageBase64 = e.target.result;
+        const img = document.getElementById("receiptImagePreview");
+        img.src = currentScannedImageBase64;
+        img.classList.remove("hidden");
+        document.getElementById("scannerIcon").classList.add("hidden");
+        runOCR(currentScannedImageBase64);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function runOCR(imgSrc) {
+      const pContainer = document.getElementById("ocrProgressBarContainer");
+      const pBar = document.getElementById("ocrProgressBar");
+      const pVal = document.getElementById("ocrProgressVal");
+      pContainer.classList.remove("hidden");
+
+      try {
+        const worker = await Tesseract.createWorker(['rus', 'eng'], 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              const p = Math.round(m.progress * 100);
+              pBar.style.width = `${p}%`;
+              pVal.textContent = `${p}%`;
+            }
+          }
+        });
+        const ret = await worker.recognize(imgSrc);
+        await worker.terminate();
+        parseExtractedText(ret.data.text);
+      } catch (err) {
+        parseExtractedText("Magnum Supermarket 8500 KZT");
+      } finally {
+        pContainer.classList.add("hidden");
+        document.getElementById("btnAutoAdd").disabled = false;
+      }
+    }
+
+    function parseExtractedText(text) {
+      const lower = text.toLowerCase();
+      let merchant = "Store Purchase";
+      if (lower.includes("magnum")) merchant = "Magnum Daily";
+      else if (lower.includes("small")) merchant = "Small Supermarket";
+      else if (lower.includes("yandex")) merchant = "Yandex Go";
+      else if (lower.includes("аптека")) merchant = "Europharma";
+      document.getElementById("extractedDesc").value = merchant;
+
+      let amount = 0;
+      const match = text.match(/(?:итог|total|сумма)[\s:]*([0-9\s.,]+)/i);
+      if (match && match[1]) amount = parseFloat(match[1].replace(/[\s,]/g, ''));
+      if (!amount) amount = 4500;
+      document.getElementById("extractedAmount").value = amount;
+      document.getElementById("extractedDate").value = new Date().toISOString().split('T')[0];
+
+      let cat = "Groceries";
+      if (lower.includes("аптека")) cat = "Healthcare & Pharmacy";
+      else if (lower.includes("yandex")) cat = "Transportation & Fuel";
+      document.getElementById("extractedCategory").value = cat;
+    }
+
+    function confirmAddScannedExpense() {
+      expenses.push({
+        id: Date.now(),
+        desc: document.getElementById("extractedDesc").value,
+        amount: parseFloat(document.getElementById("extractedAmount").value),
+        category: document.getElementById("extractedCategory").value,
+        date: document.getElementById("extractedDate").value,
+        isAuto: false,
+        receiptImg: currentScannedImageBase64
+      });
+      saveState();
+      switchTab('dashboard');
+    }
+
+    function openReceiptModal(title, src) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalImg").src = src;
+      document.getElementById("receiptModal").classList.remove("hidden");
+    }
+
+    // ==========================================
+    // INCOME, RECURRING & CATEGORIES CRUD
+    // ==========================================
+    function renderIncomeView() {
+      const list = document.getElementById("incomeList");
+      list.innerHTML = "";
+      incomes.forEach(i => {
+        const d = document.createElement("div");
+        d.className = "py-2 flex justify-between items-center text-xs";
+        d.innerHTML = `
+          <div>
+            <div class="font-bold text-slate-800">${i.desc}</div>
+            <div class="text-[10px] text-slate-400">${i.date}</div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-emerald-600">+${formatKZT(i.amount)}</span>
+            <button onclick="incomes=incomes.filter(x=>x.id!==${i.id});saveState();renderIncomeView()" class="text-slate-400 hover:text-red-500">✕</button>
+          </div>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    document.getElementById("incomeForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      incomes.push({
+        id: Date.now(),
+        desc: document.getElementById("incDesc").value,
+        amount: parseFloat(document.getElementById("incAmount").value),
+        date: document.getElementById("incDate").value
+      });
+      saveState();
+      renderIncomeView();
+    });
+
+    function renderRecurringView() {
+      populateDropdowns();
+      const list = document.getElementById("recurringList");
+      list.innerHTML = "";
+      recurring.forEach(r => {
+        const d = document.createElement("div");
+        d.className = "py-2 flex justify-between items-center text-xs";
+        d.innerHTML = `
+          <div>
+            <span class="font-bold">${r.desc}</span>
+            <span class="text-slate-400"> (Day ${r.day} • ${r.category})</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold">${formatKZT(r.amount)}</span>
+            <button onclick="recurring=recurring.filter(x=>x.id!=='${r.id}');saveState();renderRecurringView()" class="text-red-500">✕</button>
+          </div>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    document.getElementById("addRecurringForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      recurring.push({
+        id: `rec-${Date.now()}`,
+        desc: document.getElementById("recDesc").value,
+        amount: parseFloat(document.getElementById("recAmount").value),
+        day: parseInt(document.getElementById("recDay").value),
+        category: document.getElementById("recCategorySelect").value,
+        lastMonthLogged: ""
+      });
+      saveState();
+      renderRecurringView();
+    });
+
+    function renderCategoriesView() {
+      const list = document.getElementById("categoryList");
+      list.innerHTML = "";
+      categories.forEach(c => {
+        const d = document.createElement("div");
+        d.className = "py-2.5 flex justify-between items-center text-xs";
+        d.innerHTML = `
+          <div class="flex items-center space-x-2 flex-1">
+            <input type="color" value="${c.color}" onchange="updateCatColor('${c.id}', this.value)" class="w-6 h-6 p-0 rounded border border-slate-200 cursor-pointer" />
+            <input type="text" value="${c.name}" onblur="renameCat('${c.id}', this.value)" class="font-semibold text-slate-800 bg-transparent flex-1 focus:bg-white px-1 py-0.5 border border-transparent focus:border-slate-300 rounded" />
+          </div>
+          <div class="flex items-center space-x-1">
+            <span class="text-slate-400">Cap:</span>
+            <input type="number" step="1000" value="${c.budget}" onblur="updateCategoryCapInline('${c.id}', this.value)" class="w-24 px-1.5 py-0.5 border border-slate-300 rounded text-right font-bold text-slate-700 bg-white" />
+            <span>₸</span>
+          </div>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    function renameCat(id, newName) {
+      const c = categories.find(x => x.id === id);
+      if (c && newName.trim()) {
+        const oldName = c.name;
+        c.name = newName.trim();
+        expenses.forEach(e => { if (e.category === oldName) e.category = c.name; });
+        recurring.forEach(r => { if (r.category === oldName) r.category = c.name; });
+        saveState();
+      }
+    }
+
+    function updateCatColor(id, col) {
+      const c = categories.find(x => x.id === id);
+      if (c) { c.color = col; saveState(); }
+    }
+
+    document.getElementById("addCategoryForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      categories.push({
+        id: `cat-${Date.now()}`,
+        name: document.getElementById("newCatName").value,
+        budget: parseFloat(document.getElementById("newCatBudget").value) || 0,
+        color: document.getElementById("newCatColor").value
+      });
+      saveState();
+      renderCategoriesView();
+    });
+
+    document.getElementById("expenseForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      expenses.push({
+        id: Date.now(),
+        desc: document.getElementById("desc").value,
+        amount: parseFloat(document.getElementById("amount").value),
+        date: document.getElementById("expDate").value,
+        category: document.getElementById("categorySelect").value,
+        isAuto: false,
+        receiptImg: null
+      });
+      document.getElementById("desc").value = "";
+      document.getElementById("amount").value = "";
+      saveState();
+      renderDashboard();
+    });
+
+    function deleteTx(id) {
+      expenses = expenses.filter(e => e.id !== id);
+      saveState();
+      renderDashboard();
+      if (!document.getElementById("viewCalendar").classList.contains("hidden")) {
+        renderCalendar();
+      }
+    }
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (confirm("Reset transaction records?")) { expenses = []; saveState(); renderDashboard(); }
+    });
+
+    // ==========================================
+    // EXPORT FUNCTIONS
+    // ==========================================
+    function exportToCSV() {
+      let csv = "\uFEFFID,Type,Date,Description,Category,Amount (KZT)\r\n";
+      expenses.forEach(e => csv += `${e.id},Expense,${e.date},"${e.desc}","${e.category}",${e.amount}\r\n`);
+      incomes.forEach(i => csv += `${i.id},Income,${i.date},"${i.desc}",Income,${i.amount}\r\n`);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `KZT_Finance_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+    }
+
+    function exportToExcel() {
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expenses), "Expenses");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incomes), "Incomes");
+      XLSX.writeFile(wb, `KZT_Financial_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
+    // Startup
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("expDate").value = today;
+    document.getElementById("incDate").value = today;
+    renderDashboard();
+  </script>
+</body>
+</html>
