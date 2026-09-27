@@ -18,79 +18,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
-  <style>
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-8px); }
-      40%, 80% { transform: translateX(8px); }
-    }
-    .shake-animation {
-      animation: shake 0.35s ease-in-out;
-    }
-  </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen select-none">
 
-  <!-- ========================================== -->
-  <!-- 🔒 SECURITY LOCK SCREEN OVERLAY -->
-  <!-- ========================================== -->
-  <div id="lockScreenOverlay" class="fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-between p-6 sm:p-10 text-white transition-opacity duration-300">
-    <div class="flex flex-col items-center space-y-2 pt-6">
-      <div class="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-3xl font-black shadow-lg shadow-indigo-500/30">
-        ₸
-      </div>
-      <h2 class="text-xl font-bold tracking-tight">TengeTrack Security</h2>
-      <p id="lockScreenSubtitle" class="text-xs text-slate-400">Enter your 4-digit PIN to access records</p>
-    </div>
-
-    <!-- PIN Indicator Dots -->
-    <div id="pinDotsContainer" class="flex items-center space-x-5 my-6">
-      <div class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-transparent transition-all duration-200"></div>
-      <div class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-transparent transition-all duration-200"></div>
-      <div class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-transparent transition-all duration-200"></div>
-      <div class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-transparent transition-all duration-200"></div>
-    </div>
-
-    <!-- Error/Status text -->
-    <div id="lockStatusText" class="text-xs font-semibold text-rose-400 h-5"></div>
-
-    <!-- Numeric Keypad -->
-    <div class="w-full max-w-xs space-y-3 pb-6">
-      <div class="grid grid-cols-3 gap-3">
-        <button onclick="handleNumPadPress('1')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">1</button>
-        <button onclick="handleNumPadPress('2')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">2</button>
-        <button onclick="handleNumPadPress('3')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">3</button>
-
-        <button onclick="handleNumPadPress('4')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">4</button>
-        <button onclick="handleNumPadPress('5')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">5</button>
-        <button onclick="handleNumPadPress('6')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">6</button>
-
-        <button onclick="handleNumPadPress('7')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">7</button>
-        <button onclick="handleNumPadPress('8')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">8</button>
-        <button onclick="handleNumPadPress('9')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">9</button>
-
-        <!-- Biometric Button -->
-        <button onclick="triggerBiometricAuth()" class="h-16 rounded-2xl bg-indigo-600/30 active:bg-indigo-600/50 text-indigo-400 text-xl font-bold flex items-center justify-center transition" title="Use Fingerprint / Face ID">
-          👤
-        </button>
-        <button onclick="handleNumPadPress('0')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">0</button>
-        <button onclick="handleNumPadBackspace()" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-slate-400 text-xl font-bold flex items-center justify-center transition">
-          ⌫
-        </button>
-      </div>
-
-      <div class="text-center pt-2">
-        <button onclick="resetPinPrompt()" class="text-xs text-slate-400 hover:text-indigo-400 underline">
-          Forgot PIN / Set New Passcode
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================== -->
   <!-- MAIN APP CONTAINER -->
-  <!-- ========================================== -->
   <div class="max-w-6xl mx-auto p-2 sm:p-6 pb-20 space-y-4">
     
     <!-- PWA Install Banner -->
@@ -114,13 +45,12 @@
           <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
             <span class="text-indigo-600">₸</span><span>TengeTrack</span>
           </h1>
-          <p class="text-xs text-slate-400">English Voice Logger • Calendar • Caps • OCR</p>
+          <p class="text-xs text-slate-400">English Voice Logger • Calendar • Smart Caps • OCR</p>
         </div>
 
-        <div class="flex items-center space-x-2 lg:hidden">
-          <button onclick="startVoiceRecognition()" class="p-2 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-base" title="Voice Input">🎙️</button>
-          <button onclick="lockApp()" class="p-2 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 text-base" title="Lock App">🔒</button>
-        </div>
+        <button onclick="startVoiceRecognition()" class="lg:hidden p-2 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-base" title="Voice Input">
+          🎙️
+        </button>
       </div>
 
       <!-- Navigation Tabs & Actions -->
@@ -145,7 +75,7 @@
             🔁 Recurring
           </button>
           <button id="tabCategories" onclick="switchTab('categories')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
-            🏷️ Caps & PIN
+            🏷️ Caps
           </button>
         </div>
 
@@ -155,9 +85,6 @@
           </button>
           <button onclick="exportToExcel()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
             Excel
-          </button>
-          <button onclick="lockApp()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold shadow-sm transition flex items-center space-x-1" title="Lock App Now">
-            <span>🔒</span><span class="hidden sm:inline">Lock</span>
           </button>
         </div>
       </div>
@@ -211,7 +138,7 @@
       <!-- Form & Chart Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="space-y-4">
-          <!-- Manual Form with 1 to 20M limits -->
+          <!-- Manual Form (1 to 20M limits) -->
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <h2 class="text-sm font-bold text-slate-800 mb-3">Record Expense</h2>
             <form id="expenseForm" class="space-y-3">
@@ -305,12 +232,12 @@
       </div>
     </main>
 
-    <!-- VIEW 3: ENGLISH VOICE RECORDER -->
+    <!-- VIEW 3: ENGLISH VOICE RECORDER WITH CATEGORY DROPDOWN -->
     <main id="viewVoice" class="hidden space-y-4">
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center max-w-xl mx-auto space-y-5">
         <div>
           <h2 class="text-lg font-bold text-slate-900">English Voice Expense Logger</h2>
-          <p class="text-xs text-slate-400 mt-1">Tap the microphone and speak your expense in English. The app will parse and categorize it in English.</p>
+          <p class="text-xs text-slate-400 mt-1">Tap the microphone and speak your expense in English. You can change the category via dropdown before saving.</p>
         </div>
 
         <div class="flex flex-col items-center justify-center py-4">
@@ -325,27 +252,32 @@
           <div id="voiceTranscript" class="text-xs font-medium text-slate-800 italic min-h-[28px]">"Coffee 1800" or "Spent 12000 on groceries"...</div>
         </div>
 
+        <!-- Parsed Review Box with Category Dropdown -->
         <div id="voiceParsedBox" class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-100 text-left space-y-3 hidden">
           <div class="text-xs font-bold text-indigo-900 flex justify-between items-center">
             <span>Parsed Expense Details</span>
-            <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Ready</span>
+            <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">Review &amp; Edit</span>
           </div>
-          <div class="grid grid-cols-2 gap-2 text-xs">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <span class="text-slate-500">Merchant / Item:</span>
-              <strong id="voiceParsedDesc" class="block text-slate-800"></strong>
+              <label class="block text-slate-500 font-medium mb-1">Merchant / Item:</label>
+              <input type="text" id="voiceParsedDescInput" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white font-semibold text-slate-800" />
             </div>
             <div>
-              <span class="text-slate-500">Amount:</span>
-              <strong id="voiceParsedAmount" class="block text-indigo-600 font-bold"></strong>
+              <label class="block text-slate-500 font-medium mb-1">Amount (₸):</label>
+              <input type="number" id="voiceParsedAmountInput" step="any" min="1" max="20000000" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs font-bold text-indigo-700 bg-white" />
             </div>
-            <div class="col-span-2">
-              <span class="text-slate-500">Auto Category:</span>
-              <strong id="voiceParsedCat" class="block text-slate-800"></strong>
+            
+            <!-- Category Dropdown Selector for Voice Entry -->
+            <div class="sm:col-span-2">
+              <label class="block text-slate-500 font-medium mb-1">Category (Change if Needed):</label>
+              <select id="voiceCategorySelect" class="w-full px-2.5 py-2 border border-slate-300 rounded text-xs bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500"></select>
             </div>
           </div>
-          <button onclick="confirmVoiceExpense()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition">
-            ✓ Confirm & Save Expense
+
+          <button onclick="confirmVoiceExpense()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition shadow-sm">
+            ✓ Confirm &amp; Save Expense
           </button>
         </div>
 
@@ -365,7 +297,7 @@
     <main id="viewScanner" class="hidden space-y-4">
       <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <div>
-          <h2 class="text-base font-bold">Receipt Camera & OCR Scanner</h2>
+          <h2 class="text-base font-bold">Receipt Camera &amp; OCR Scanner</h2>
           <p class="text-xs text-slate-400">Snap a picture of your store slip or Kaspi payment to extract and record automatically.</p>
         </div>
 
@@ -452,20 +384,8 @@
       </div>
     </main>
 
-    <!-- VIEW 7: CATEGORIES & SECURITY SETTINGS -->
+    <!-- VIEW 7: CATEGORIES & CAPS -->
     <main id="viewCategories" class="hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <div class="flex justify-between items-center">
-          <div>
-            <h2 class="text-sm font-bold text-slate-900">Security & PIN Settings</h2>
-            <p class="text-xs text-slate-400">Manage your 4-digit PIN and Biometric authentication.</p>
-          </div>
-          <button onclick="changePinInteractive()" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg">
-            Change 4-Digit PIN
-          </button>
-        </div>
-      </div>
-
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="text-sm font-bold">Add New Category</h2>
         <form id="addCategoryForm" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
@@ -479,7 +399,7 @@
       </div>
 
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <h2 class="text-sm font-bold mb-2">Category Caps & Color Coding (Edit Values Directly)</h2>
+        <h2 class="text-sm font-bold mb-2">Category Caps &amp; Color Coding (Edit Values Directly)</h2>
         <div id="categoryList" class="divide-y divide-slate-100 max-h-80 overflow-y-auto"></div>
       </div>
     </main>
@@ -499,185 +419,6 @@
   <script>
     const formatKZT = (val) => `${Math.round(val).toLocaleString('en-US')} ₸`;
     const getCurrentMonthKey = () => new Date().toISOString().slice(0, 7);
-
-    // ==========================================
-    // 🔒 SECURITY & BIOMETRIC AUTH ENGINE
-    // ==========================================
-    let currentPinInput = "";
-    let isAppLocked = true;
-    let isSettingNewPin = false;
-    let tempNewPin = "";
-
-    let storedPin = localStorage.getItem("app_security_pin") || "1234";
-
-    function updatePinDots() {
-      const dots = document.querySelectorAll(".pin-dot");
-      dots.forEach((dot, index) => {
-        if (index < currentPinInput.length) {
-          dot.classList.add("bg-indigo-500", "scale-110");
-          dot.classList.remove("bg-transparent");
-        } else {
-          dot.classList.remove("bg-indigo-500", "scale-110");
-          dot.classList.add("bg-transparent");
-        }
-      });
-    }
-
-    function handleNumPadPress(digit) {
-      if (currentPinInput.length >= 4) return;
-      if (navigator.vibrate) navigator.vibrate(30);
-
-      currentPinInput += digit;
-      updatePinDots();
-
-      if (currentPinInput.length === 4) {
-        setTimeout(evaluateEnteredPin, 150);
-      }
-    }
-
-    function handleNumPadBackspace() {
-      if (currentPinInput.length > 0) {
-        if (navigator.vibrate) navigator.vibrate(20);
-        currentPinInput = currentPinInput.slice(0, -1);
-        updatePinDots();
-        document.getElementById("lockStatusText").textContent = "";
-      }
-    }
-
-    function evaluateEnteredPin() {
-      if (isSettingNewPin) {
-        if (!tempNewPin) {
-          tempNewPin = currentPinInput;
-          currentPinInput = "";
-          updatePinDots();
-          document.getElementById("lockScreenSubtitle").textContent = "Re-enter new 4-digit PIN to confirm";
-        } else {
-          if (currentPinInput === tempNewPin) {
-            storedPin = tempNewPin;
-            localStorage.setItem("app_security_pin", storedPin);
-            isSettingNewPin = false;
-            tempNewPin = "";
-            document.getElementById("lockStatusText").textContent = "PIN set successfully!";
-            document.getElementById("lockStatusText").className = "text-xs font-semibold text-emerald-400 h-5";
-            setTimeout(unlockApp, 500);
-          } else {
-            shakePinDots("PINs do not match. Try again.");
-            isSettingNewPin = false;
-            tempNewPin = "";
-            document.getElementById("lockScreenSubtitle").textContent = "Enter your 4-digit PIN";
-          }
-        }
-        return;
-      }
-
-      if (currentPinInput === storedPin) {
-        unlockApp();
-      } else {
-        shakePinDots("Incorrect PIN. Try again.");
-      }
-    }
-
-    function shakePinDots(msg) {
-      if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
-      const container = document.getElementById("pinDotsContainer");
-      container.classList.add("shake-animation");
-      document.getElementById("lockStatusText").textContent = msg;
-
-      setTimeout(() => {
-        container.classList.remove("shake-animation");
-        currentPinInput = "";
-        updatePinDots();
-      }, 400);
-    }
-
-    function unlockApp() {
-      isAppLocked = false;
-      currentPinInput = "";
-      updatePinDots();
-      document.getElementById("lockStatusText").textContent = "";
-      const overlay = document.getElementById("lockScreenOverlay");
-      overlay.style.opacity = "0";
-      setTimeout(() => {
-        overlay.classList.add("hidden");
-        overlay.style.opacity = "1";
-      }, 300);
-    }
-
-    function lockApp() {
-      isAppLocked = true;
-      currentPinInput = "";
-      updatePinDots();
-      document.getElementById("lockScreenSubtitle").textContent = "Enter your 4-digit PIN to access records";
-      document.getElementById("lockStatusText").textContent = "";
-      const overlay = document.getElementById("lockScreenOverlay");
-      overlay.classList.remove("hidden");
-    }
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden && !isAppLocked) {
-        lockApp();
-      }
-    });
-
-    async function triggerBiometricAuth() {
-      if (navigator.vibrate) navigator.vibrate(40);
-      document.getElementById("lockStatusText").textContent = "Authenticating biometrics...";
-
-      if (!window.PublicKeyCredential) {
-        document.getElementById("lockStatusText").textContent = "Biometrics unavailable on this device. Use PIN.";
-        return;
-      }
-
-      try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-
-        const credential = await navigator.credentials.get({
-          publicKey: {
-            challenge,
-            timeout: 60000,
-            userVerification: "required"
-          }
-        });
-
-        if (credential) {
-          unlockApp();
-        }
-      } catch (err) {
-        console.warn("Biometrics skipped:", err);
-        document.getElementById("lockStatusText").textContent = "Biometrics cancelled. Enter 4-digit PIN.";
-      }
-    }
-
-    function resetPinPrompt() {
-      const oldPin = prompt("Enter current PIN to reset:");
-      if (oldPin === storedPin) {
-        isSettingNewPin = true;
-        tempNewPin = "";
-        currentPinInput = "";
-        updatePinDots();
-        document.getElementById("lockScreenSubtitle").textContent = "Enter a NEW 4-digit PIN";
-        document.getElementById("lockStatusText").textContent = "";
-      } else {
-        alert("Incorrect current PIN.");
-      }
-    }
-
-    function changePinInteractive() {
-      const oldPin = prompt("Enter your existing PIN:");
-      if (oldPin === storedPin) {
-        const newPin = prompt("Enter new 4-digit PIN:");
-        if (newPin && newPin.length === 4 && /^\d+$/.test(newPin)) {
-          storedPin = newPin;
-          localStorage.setItem("app_security_pin", storedPin);
-          alert("PIN updated successfully!");
-        } else {
-          alert("PIN must be exactly 4 numbers.");
-        }
-      } else {
-        alert("Incorrect PIN.");
-      }
-    }
 
     // ==========================================
     // PWA REGISTRATION & INSTALL LOGIC
@@ -730,12 +471,12 @@
       { id: "rec-3", desc: "Loan Installment", amount: 35000, category: "Loans & Debt Payments", day: 15, lastMonthLogged: "" }
     ];
 
-    let categories = JSON.parse(localStorage.getItem("suite_v9_categories")) || defaultCategories;
-    let recurring = JSON.parse(localStorage.getItem("suite_v9_recurring")) || defaultRecurring;
-    let incomes = JSON.parse(localStorage.getItem("suite_v9_incomes")) || [
+    let categories = JSON.parse(localStorage.getItem("suite_v10_categories")) || defaultCategories;
+    let recurring = JSON.parse(localStorage.getItem("suite_v10_recurring")) || defaultRecurring;
+    let incomes = JSON.parse(localStorage.getItem("suite_v10_incomes")) || [
       { id: 1, desc: "Monthly Salary", amount: 650000, date: new Date().toISOString().split('T')[0] }
     ];
-    let expenses = JSON.parse(localStorage.getItem("suite_v9_expenses")) || [
+    let expenses = JSON.parse(localStorage.getItem("suite_v10_expenses")) || [
       { id: 101, desc: "Apartment Rent [Recurring]", amount: 180000, category: "Housing & Rent", isAuto: true, date: "2026-09-01", receiptImg: null },
       { id: 102, desc: "Weekly Groceries", amount: 48000, category: "Groceries", isAuto: false, date: "2026-09-02", receiptImg: null },
       { id: 103, desc: "Home Internet [Recurring]", amount: 8500, category: "Utilities & Internet", isAuto: true, date: "2026-09-05", receiptImg: null },
@@ -752,10 +493,10 @@
     let selectedCalDayStr = new Date().toISOString().split('T')[0];
 
     function saveState() {
-      localStorage.setItem("suite_v9_categories", JSON.stringify(categories));
-      localStorage.setItem("suite_v9_recurring", JSON.stringify(recurring));
-      localStorage.setItem("suite_v9_incomes", JSON.stringify(incomes));
-      localStorage.setItem("suite_v9_expenses", JSON.stringify(expenses));
+      localStorage.setItem("suite_v10_categories", JSON.stringify(categories));
+      localStorage.setItem("suite_v10_recurring", JSON.stringify(recurring));
+      localStorage.setItem("suite_v10_incomes", JSON.stringify(incomes));
+      localStorage.setItem("suite_v10_expenses", JSON.stringify(expenses));
     }
 
     // ==========================================
@@ -791,6 +532,7 @@
         renderCalendar();
       } else if (tab === 'voice') {
         document.getElementById('viewVoice').classList.remove('hidden');
+        populateDropdowns();
       } else if (tab === 'scanner') {
         document.getElementById('viewScanner').classList.remove('hidden');
         populateDropdowns();
@@ -933,7 +675,7 @@
       });
     }
 
-    // Calendar Quick Add (1 to 20,000,000 range)
+    // Calendar Quick Add (1 to 20M range)
     document.getElementById("inspectorQuickAddForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const desc = document.getElementById("inspectorDesc").value.trim();
@@ -972,7 +714,6 @@
         return null;
       }
       const rec = new SpeechRecognition();
-      // Set speech recognition strictly to English
       rec.lang = 'en-US';
       rec.continuous = false;
       rec.interimResults = false;
@@ -1085,17 +826,41 @@
         date: new Date().toISOString().split('T')[0] 
       };
 
-      document.getElementById("voiceParsedDesc").textContent = desc;
-      document.getElementById("voiceParsedAmount").textContent = formatKZT(amount);
-      document.getElementById("voiceParsedCat").textContent = category;
+      // Populate input fields in the review box
+      document.getElementById("voiceParsedDescInput").value = desc;
+      document.getElementById("voiceParsedAmountInput").value = amount;
+
+      // Select the auto-detected category in the dropdown
+      const voiceCatSelect = document.getElementById("voiceCategorySelect");
+      if (voiceCatSelect) {
+        voiceCatSelect.value = category;
+      }
+
       document.getElementById("voiceParsedBox").classList.remove("hidden");
     }
 
     function confirmVoiceExpense() {
-      if (!parsedVoiceItem) return;
-      expenses.push({ id: Date.now(), ...parsedVoiceItem, isAuto: false, receiptImg: null });
+      const desc = document.getElementById("voiceParsedDescInput").value.trim() || "Voice Purchase";
+      const amount = parseFloat(document.getElementById("voiceParsedAmountInput").value);
+      const selectedCategory = document.getElementById("voiceCategorySelect").value;
+
+      if (isNaN(amount) || amount < 1 || amount > 20000000) {
+        alert("Please enter a valid amount between 1 and 20,000,000 ₸.");
+        return;
+      }
+
+      expenses.push({ 
+        id: Date.now(), 
+        desc, 
+        amount, 
+        category: selectedCategory, 
+        date: new Date().toISOString().split('T')[0],
+        isAuto: false, 
+        receiptImg: null 
+      });
+
       saveState();
-      alert(`Recorded: ${parsedVoiceItem.desc} (${formatKZT(parsedVoiceItem.amount)})!`);
+      alert(`Recorded: ${desc} (${formatKZT(amount)}) in ${selectedCategory}!`);
       document.getElementById("voiceParsedBox").classList.add("hidden");
       switchTab('dashboard');
     }
@@ -1213,7 +978,8 @@
       const selects = [
         document.getElementById("categorySelect"),
         document.getElementById("recCategorySelect"),
-        document.getElementById("extractedCategory")
+        document.getElementById("extractedCategory"),
+        document.getElementById("voiceCategorySelect")
       ];
       selects.forEach(sel => {
         if (!sel) return;
@@ -1540,6 +1306,7 @@
       renderCategoriesView();
     });
 
+    // Main manual expense submission
     document.getElementById("expenseForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const desc = document.getElementById("desc").value.trim();
