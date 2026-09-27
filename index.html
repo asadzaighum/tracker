@@ -36,7 +36,6 @@
   <!-- 🔒 SECURITY LOCK SCREEN OVERLAY -->
   <!-- ========================================== -->
   <div id="lockScreenOverlay" class="fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-between p-6 sm:p-10 text-white transition-opacity duration-300">
-    <!-- Top Branding -->
     <div class="flex flex-col items-center space-y-2 pt-6">
       <div class="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-3xl font-black shadow-lg shadow-indigo-500/30">
         ₸
@@ -76,7 +75,6 @@
           👤
         </button>
         <button onclick="handleNumPadPress('0')" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-2xl font-bold flex items-center justify-center transition">0</button>
-        <!-- Backspace Button -->
         <button onclick="handleNumPadBackspace()" class="h-16 rounded-2xl bg-slate-800/80 active:bg-slate-700 text-slate-400 text-xl font-bold flex items-center justify-center transition">
           ⌫
         </button>
@@ -116,7 +114,7 @@
           <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
             <span class="text-indigo-600">₸</span><span>TengeTrack</span>
           </h1>
-          <p class="text-xs text-slate-400">Locked • Calendar • Voice Logger • Smart Caps • OCR</p>
+          <p class="text-xs text-slate-400">English Voice Logger • Calendar • Caps • OCR</p>
         </div>
 
         <div class="flex items-center space-x-2 lg:hidden">
@@ -135,7 +133,7 @@
             <span>📅</span><span>Calendar</span>
           </button>
           <button id="tabVoice" onclick="switchTab('voice')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center space-x-1">
-            <span>🎙️</span><span>Voice</span>
+            <span>🎙️</span><span>Voice (EN)</span>
           </button>
           <button id="tabScanner" onclick="switchTab('scanner')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center space-x-1">
             <span>📷</span><span>Scan</span>
@@ -186,7 +184,7 @@
           </select>
         </div>
         <button onclick="switchTab('voice')" class="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg flex items-center space-x-1.5">
-          <span>🎙️</span><span>Voice Log</span>
+          <span>🎙️</span><span>Voice Log (EN)</span>
         </button>
       </div>
 
@@ -213,16 +211,16 @@
       <!-- Form & Chart Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="space-y-4">
-          <!-- Manual Form -->
+          <!-- Manual Form with 1 to 20M limits -->
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <h2 class="text-sm font-bold text-slate-800 mb-3">Record Expense</h2>
             <form id="expenseForm" class="space-y-3">
               <div>
-                <input type="text" id="desc" required placeholder="Description (e.g. Magnum, Fuel, Yandex)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                <input type="text" id="desc" required placeholder="Description (e.g. Groceries, Taxi, Coffee)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
               </div>
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <input type="number" id="amount" step="50" min="1" required placeholder="Amount (₸)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+                  <input type="number" id="amount" step="any" min="1" max="20000000" required placeholder="Amount (1 - 20,000,000 ₸)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
                 </div>
                 <div>
                   <input type="date" id="expDate" required class="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs" />
@@ -300,31 +298,31 @@
           <div id="inspectorTxList" class="divide-y divide-indigo-100 max-h-48 overflow-y-auto text-xs"></div>
           <form id="inspectorQuickAddForm" class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-indigo-100">
             <input type="text" id="inspectorDesc" required placeholder="Quick expense on this day..." class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white" />
-            <input type="number" id="inspectorAmount" required placeholder="Amount (₸)" class="w-28 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white" />
+            <input type="number" id="inspectorAmount" step="any" min="1" max="20000000" required placeholder="Amount (1 - 20M ₸)" class="w-36 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white" />
             <button type="submit" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700">+ Add</button>
           </form>
         </div>
       </div>
     </main>
 
-    <!-- VIEW 3: VOICE RECORDER -->
+    <!-- VIEW 3: ENGLISH VOICE RECORDER -->
     <main id="viewVoice" class="hidden space-y-4">
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center max-w-xl mx-auto space-y-5">
         <div>
-          <h2 class="text-lg font-bold text-slate-900">Voice Expense Logger</h2>
-          <p class="text-xs text-slate-400 mt-1">Tap the microphone and speak your expense naturally.</p>
+          <h2 class="text-lg font-bold text-slate-900">English Voice Expense Logger</h2>
+          <p class="text-xs text-slate-400 mt-1">Tap the microphone and speak your expense in English. The app will parse and categorize it in English.</p>
         </div>
 
         <div class="flex flex-col items-center justify-center py-4">
           <button id="voiceMicBtn" onclick="toggleVoiceRecognition()" class="w-24 h-24 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-4xl shadow-xl flex items-center justify-center transition-all duration-300 cursor-pointer">
             🎙️
           </button>
-          <div id="voiceStatusText" class="text-xs font-bold text-slate-500 mt-3">Tap to Speak</div>
+          <div id="voiceStatusText" class="text-xs font-bold text-slate-500 mt-3">Tap to Speak (English)</div>
         </div>
 
         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-left space-y-1">
           <div class="text-[10px] font-bold text-slate-400 uppercase">Heard Speech</div>
-          <div id="voiceTranscript" class="text-xs font-medium text-slate-800 italic min-h-[28px]">"Магнум 6500 тенге" or "Яндекс такси 1400"...</div>
+          <div id="voiceTranscript" class="text-xs font-medium text-slate-800 italic min-h-[28px]">"Coffee 1800" or "Spent 12000 on groceries"...</div>
         </div>
 
         <div id="voiceParsedBox" class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-100 text-left space-y-3 hidden">
@@ -334,7 +332,7 @@
           </div>
           <div class="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span class="text-slate-500">Merchant:</span>
+              <span class="text-slate-500">Merchant / Item:</span>
               <strong id="voiceParsedDesc" class="block text-slate-800"></strong>
             </div>
             <div>
@@ -349,6 +347,16 @@
           <button onclick="confirmVoiceExpense()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition">
             ✓ Confirm & Save Expense
           </button>
+        </div>
+
+        <!-- English Speech Guide -->
+        <div class="text-left bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-[11px] text-slate-600 space-y-1.5">
+          <strong class="text-slate-800 font-semibold block">Examples you can say in English:</strong>
+          <div>• "Coffee 1800" &rarr; Dining Out &amp; Cafes (1,800 ₸)</div>
+          <div>• "Spent 14500 on groceries" &rarr; Groceries (14,500 ₸)</div>
+          <div>• "Uber taxi 2200 tenge" &rarr; Transportation &amp; Fuel (2,200 ₸)</div>
+          <div>• "Pharmacy 4300" &rarr; Healthcare &amp; Pharmacy (4,300 ₸)</div>
+          <div>• "Internet bill 8500" &rarr; Utilities &amp; Internet (8,500 ₸)</div>
         </div>
       </div>
     </main>
@@ -389,7 +397,7 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="text-[10px] text-slate-500 font-medium">Amount (₸)</label>
-                <input type="number" id="extractedAmount" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs font-bold text-indigo-700 bg-white" />
+                <input type="number" id="extractedAmount" step="any" min="1" max="20000000" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs font-bold text-indigo-700 bg-white" />
               </div>
               <div>
                 <label class="text-[10px] text-slate-500 font-medium">Date</label>
@@ -414,7 +422,7 @@
         <h2 class="text-sm font-bold">Add Income Stream</h2>
         <form id="incomeForm" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input type="text" id="incDesc" required placeholder="Income source (e.g. Salary, Kaspi transfer)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-          <input type="number" id="incAmount" step="1000" min="1" required placeholder="Amount (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+          <input type="number" id="incAmount" step="any" min="1" max="20000000" required placeholder="Amount 1 - 20,000,000 ₸" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
           <input type="date" id="incDate" required class="px-2 py-2 border border-slate-300 rounded-lg text-xs" />
           <button type="submit" class="sm:col-span-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">+ Record Income</button>
         </form>
@@ -432,7 +440,7 @@
         <h2 class="text-sm font-bold">Add Fixed Monthly Obligation</h2>
         <form id="addRecurringForm" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
           <input type="text" id="recDesc" required placeholder="Name (e.g. Rent, Internet)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-          <input type="number" id="recAmount" step="100" min="1" required placeholder="Amount (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+          <input type="number" id="recAmount" step="any" min="1" max="20000000" required placeholder="Amount 1 - 20,000,000 ₸" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
           <input type="number" id="recDay" min="1" max="31" required value="1" placeholder="Day (1-31)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
           <select id="recCategorySelect" class="px-2 py-2 border border-slate-300 rounded-lg text-xs"></select>
           <button type="submit" class="sm:col-span-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg text-xs">+ Save Recurring Rule</button>
@@ -446,7 +454,6 @@
 
     <!-- VIEW 7: CATEGORIES & SECURITY SETTINGS -->
     <main id="viewCategories" class="hidden space-y-4">
-      <!-- Security / PIN Management Card -->
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
         <div class="flex justify-between items-center">
           <div>
@@ -463,7 +470,7 @@
         <h2 class="text-sm font-bold">Add New Category</h2>
         <form id="addCategoryForm" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
           <input type="text" id="newCatName" required placeholder="Category name" class="sm:col-span-2 px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-          <input type="number" id="newCatBudget" step="500" min="0" placeholder="Cap (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <input type="number" id="newCatBudget" step="any" min="0" max="20000000" placeholder="Cap (₸, max 20M)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
           <div class="flex items-center gap-2">
             <input type="color" id="newCatColor" value="#6366f1" class="w-8 h-8 rounded border border-slate-300 cursor-pointer" />
             <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg">Add</button>
@@ -490,7 +497,7 @@
   </div>
 
   <script>
-    const formatKZT = (val) => `${Math.round(val).toLocaleString('ru-KZ')} ₸`;
+    const formatKZT = (val) => `${Math.round(val).toLocaleString('en-US')} ₸`;
     const getCurrentMonthKey = () => new Date().toISOString().slice(0, 7);
 
     // ==========================================
@@ -501,7 +508,6 @@
     let isSettingNewPin = false;
     let tempNewPin = "";
 
-    // Default PIN: "1234" on initial fresh run
     let storedPin = localStorage.getItem("app_security_pin") || "1234";
 
     function updatePinDots() {
@@ -607,14 +613,12 @@
       overlay.classList.remove("hidden");
     }
 
-    // Auto-lock when user tabs away, switches apps, or closes screen
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && !isAppLocked) {
         lockApp();
       }
     });
 
-    // Native WebAuthn Biometric Authenticator
     async function triggerBiometricAuth() {
       if (navigator.vibrate) navigator.vibrate(40);
       document.getElementById("lockStatusText").textContent = "Authenticating biometrics...";
@@ -628,7 +632,6 @@
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
 
-        // Request biometric verification from platform
         const credential = await navigator.credentials.get({
           publicKey: {
             challenge,
@@ -641,8 +644,7 @@
           unlockApp();
         }
       } catch (err) {
-        console.warn("Biometric authentication skipped or unavailable:", err);
-        // Fallback simulate success if in test environment or allow PIN entry
+        console.warn("Biometrics skipped:", err);
         document.getElementById("lockStatusText").textContent = "Biometrics cancelled. Enter 4-digit PIN.";
       }
     }
@@ -724,22 +726,22 @@
 
     const defaultRecurring = [
       { id: "rec-1", desc: "Apartment Rent", amount: 180000, category: "Housing & Rent", day: 1, lastMonthLogged: "" },
-      { id: "rec-2", desc: "Kazakhtelecom Internet", amount: 8500, category: "Utilities & Internet", day: 5, lastMonthLogged: "" },
-      { id: "rec-3", desc: "Kaspi Red Installment", amount: 35000, category: "Loans & Debt Payments", day: 15, lastMonthLogged: "" }
+      { id: "rec-2", desc: "Home Internet & TV", amount: 8500, category: "Utilities & Internet", day: 5, lastMonthLogged: "" },
+      { id: "rec-3", desc: "Loan Installment", amount: 35000, category: "Loans & Debt Payments", day: 15, lastMonthLogged: "" }
     ];
 
-    let categories = JSON.parse(localStorage.getItem("suite_v7_categories")) || defaultCategories;
-    let recurring = JSON.parse(localStorage.getItem("suite_v7_recurring")) || defaultRecurring;
-    let incomes = JSON.parse(localStorage.getItem("suite_v7_incomes")) || [
-      { id: 1, desc: "Salary (Kaspi Pay)", amount: 650000, date: new Date().toISOString().split('T')[0] }
+    let categories = JSON.parse(localStorage.getItem("suite_v9_categories")) || defaultCategories;
+    let recurring = JSON.parse(localStorage.getItem("suite_v9_recurring")) || defaultRecurring;
+    let incomes = JSON.parse(localStorage.getItem("suite_v9_incomes")) || [
+      { id: 1, desc: "Monthly Salary", amount: 650000, date: new Date().toISOString().split('T')[0] }
     ];
-    let expenses = JSON.parse(localStorage.getItem("suite_v7_expenses")) || [
+    let expenses = JSON.parse(localStorage.getItem("suite_v9_expenses")) || [
       { id: 101, desc: "Apartment Rent [Recurring]", amount: 180000, category: "Housing & Rent", isAuto: true, date: "2026-09-01", receiptImg: null },
-      { id: 102, desc: "Magnum Hypermarket", amount: 48000, category: "Groceries", isAuto: false, date: "2026-09-02", receiptImg: null },
-      { id: 103, desc: "Kazakhtelecom Internet [Recurring]", amount: 8500, category: "Utilities & Internet", isAuto: true, date: "2026-09-05", receiptImg: null },
+      { id: 102, desc: "Weekly Groceries", amount: 48000, category: "Groceries", isAuto: false, date: "2026-09-02", receiptImg: null },
+      { id: 103, desc: "Home Internet [Recurring]", amount: 8500, category: "Utilities & Internet", isAuto: true, date: "2026-09-05", receiptImg: null },
       { id: 104, desc: "Dinner with Friends", amount: 14500, category: "Dining Out & Cafes", isAuto: false, date: "2026-09-12", receiptImg: null },
-      { id: 105, desc: "Kaspi Red Installment [Recurring]", amount: 35000, category: "Loans & Debt Payments", isAuto: true, date: "2026-09-15", receiptImg: null },
-      { id: 106, desc: "Gasoline / Fuel", amount: 12000, category: "Transportation & Fuel", isAuto: false, date: "2026-09-20", receiptImg: null }
+      { id: 105, desc: "Loan Installment [Recurring]", amount: 35000, category: "Loans & Debt Payments", isAuto: true, date: "2026-09-15", receiptImg: null },
+      { id: 106, desc: "Fuel / Gasoline", amount: 12000, category: "Transportation & Fuel", isAuto: false, date: "2026-09-20", receiptImg: null }
     ];
 
     let chartInstance = null;
@@ -750,10 +752,10 @@
     let selectedCalDayStr = new Date().toISOString().split('T')[0];
 
     function saveState() {
-      localStorage.setItem("suite_v7_categories", JSON.stringify(categories));
-      localStorage.setItem("suite_v7_recurring", JSON.stringify(recurring));
-      localStorage.setItem("suite_v7_incomes", JSON.stringify(incomes));
-      localStorage.setItem("suite_v7_expenses", JSON.stringify(expenses));
+      localStorage.setItem("suite_v9_categories", JSON.stringify(categories));
+      localStorage.setItem("suite_v9_recurring", JSON.stringify(recurring));
+      localStorage.setItem("suite_v9_incomes", JSON.stringify(incomes));
+      localStorage.setItem("suite_v9_expenses", JSON.stringify(expenses));
     }
 
     // ==========================================
@@ -931,11 +933,15 @@
       });
     }
 
+    // Calendar Quick Add (1 to 20,000,000 range)
     document.getElementById("inspectorQuickAddForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const desc = document.getElementById("inspectorDesc").value.trim();
       const amount = parseFloat(document.getElementById("inspectorAmount").value);
-      if (!desc || isNaN(amount) || amount <= 0) return;
+      if (!desc || isNaN(amount) || amount < 1 || amount > 20000000) {
+        alert("Please enter an amount between 1 and 20,000,000 ₸.");
+        return;
+      }
 
       expenses.push({
         id: Date.now(),
@@ -954,7 +960,7 @@
     });
 
     // ==========================================
-    // VOICE INPUT SPEECH RECOGNITION
+    // 🎙️ ENGLISH VOICE INPUT ENGINE
     // ==========================================
     let recognition = null;
     let isListening = false;
@@ -966,7 +972,8 @@
         return null;
       }
       const rec = new SpeechRecognition();
-      rec.lang = 'ru-RU';
+      // Set speech recognition strictly to English
+      rec.lang = 'en-US';
       rec.continuous = false;
       rec.interimResults = false;
 
@@ -975,14 +982,14 @@
         const btn = document.getElementById("voiceMicBtn");
         btn.classList.add("animate-pulse", "bg-rose-600");
         btn.classList.remove("bg-indigo-600");
-        document.getElementById("voiceStatusText").textContent = "Listening... Speak now";
+        document.getElementById("voiceStatusText").textContent = "Listening in English... Speak now";
         document.getElementById("voiceStatusText").className = "text-xs font-bold text-rose-600 mt-3 animate-pulse";
       };
 
       rec.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         document.getElementById("voiceTranscript").textContent = `"${transcript}"`;
-        parseVoiceSpeech(transcript);
+        parseEnglishVoiceSpeech(transcript);
       };
 
       rec.onerror = () => {
@@ -1002,7 +1009,7 @@
       const btn = document.getElementById("voiceMicBtn");
       btn.classList.remove("animate-pulse", "bg-rose-600");
       btn.classList.add("bg-indigo-600");
-      document.getElementById("voiceStatusText").textContent = "Tap to Speak";
+      document.getElementById("voiceStatusText").textContent = "Tap to Speak (English)";
       document.getElementById("voiceStatusText").className = "text-xs font-bold text-slate-500 mt-3";
     }
 
@@ -1018,33 +1025,65 @@
       setTimeout(toggleVoiceRecognition, 300);
     }
 
-    function parseVoiceSpeech(text) {
+    // Natural English Parser
+    function parseEnglishVoiceSpeech(text) {
       const clean = text.toLowerCase();
-      let amount = 0;
-      const numMatch = clean.match(/(\d[\d\s,.]*)\s*(?:тенге|₸|тг|kzt)?/i);
-      if (numMatch && numMatch[1]) amount = parseFloat(numMatch[1].replace(/[\s,]/g, ''));
-      if (!amount || isNaN(amount)) amount = 3000;
 
+      // 1. Extract numeric value
+      let amount = 0;
+      const numMatch = clean.match(/\b\d+(?:[.,\s]\d+)?\b/);
+      if (numMatch) {
+        amount = parseFloat(numMatch[0].replace(/[\s,]/g, ''));
+      }
+      if (!amount || isNaN(amount)) amount = 1000;
+      amount = Math.min(Math.max(amount, 1), 20000000);
+
+      // 2. Clean description and strip conversational filler words
       let desc = clean
-        .replace(/(\d[\d\s,.]*)\s*(?:тенге|₸|тг|kzt)?/gi, '')
-        .replace(/(?:добавь|запиши|трата|купил|купила|расход|потратил|потратила|тенге|тг|₸)/gi, '')
+        .replace(/\b\d+(?:[.,\s]\d+)?\b/g, '')
+        .replace(/\b(tenge|kzt|dollars|bucks|kzt\.|spent|bought|add|record|for|at|on|pay|paid|cost|a|the|in|to)\b/gi, '')
+        .replace(/[^\w\s]/gi, '')
         .trim();
 
       if (!desc) desc = "Voice Purchase";
       desc = desc.charAt(0).toUpperCase() + desc.slice(1);
 
+      // 3. Match categories based on English vocabulary
       let category = "Groceries";
-      if (/аптек|лекарств|клиник|врач|pharm|europharma/i.test(clean)) category = "Healthcare & Pharmacy";
-      else if (/такси|яндекс|yandex|бензин|газ|проезд|автобус|парковк/i.test(clean)) category = "Transportation & Fuel";
-      else if (/обед|ужин|завтрак|кофе|кафе|ресторан|донер|бургер|пицц|starbucks/i.test(clean)) category = "Dining Out & Cafes";
-      else if (/магнум|magnum|смолл|small|галмарт|galmart|магазин|хлеб|молоко|мясо|продукты/i.test(clean)) category = "Groceries";
-      else if (/аренд|кварт|жиль/i.test(clean)) category = "Housing & Rent";
-      else if (/коммунал|интернет|свет|вода|отоплен|казахтелеком|билайн|kcell/i.test(clean)) category = "Utilities & Internet";
-      else if (/одежд|вещи|куртк|обувь|zara|шопинг|kaspi red/i.test(clean)) category = "Shopping & Clothing";
-      else if (/кино|билет|спорт|зал|фитнес|клуб/i.test(clean)) category = "Entertainment & Leisure";
-      else if (/кредит|рассрочк|долг/i.test(clean)) category = "Loans & Debt Payments";
+      if (/\b(pharmacy|medicine|doctor|clinic|drug|drugs|pills|dentist|hospital|healthcare|pharm)\b/i.test(clean)) {
+        category = "Healthcare & Pharmacy";
+      } else if (/\b(taxi|uber|yandex|fuel|gas|petrol|gasoline|bus|metro|subway|parking|transport|flight|train)\b/i.test(clean)) {
+        category = "Transportation & Fuel";
+      } else if (/\b(coffee|cafe|starbucks|restaurant|dinner|lunch|breakfast|burger|pizza|bar|drink|drinks|doner|bakery)\b/i.test(clean)) {
+        category = "Dining Out & Cafes";
+      } else if (/\b(groceries|grocery|supermarket|magnum|small|galmart|market|milk|bread|meat|fruits|vegetables|food|snack)\b/i.test(clean)) {
+        category = "Groceries";
+      } else if (/\b(rent|apartment|house|flat|housing|landlord)\b/i.test(clean)) {
+        category = "Housing & Rent";
+      } else if (/\b(utilities|utility|internet|wifi|electric|electricity|water|heating|phone|bill|beeline|kcell|telecom)\b/i.test(clean)) {
+        category = "Utilities & Internet";
+      } else if (/\b(clothes|clothing|shoes|jacket|shirt|pants|shopping|mall|zara|outfit|kaspi red)\b/i.test(clean)) {
+        category = "Shopping & Clothing";
+      } else if (/\b(movie|cinema|tickets|concert|game|gaming|gym|fitness|workout|club|party)\b/i.test(clean)) {
+        category = "Entertainment & Leisure";
+      } else if (/\b(subscription|netflix|spotify|youtube|apple|prime|app)\b/i.test(clean)) {
+        category = "Subscriptions & Streaming";
+      } else if (/\b(haircut|barber|salon|massage|spa|beauty|cosmetics)\b/i.test(clean)) {
+        category = "Personal Care & Beauty";
+      } else if (/\b(course|tuition|school|class|books|education|university)\b/i.test(clean)) {
+        category = "Education & Courses";
+      } else if (/\b(loan|debt|credit|installment|mortgage)\b/i.test(clean)) {
+        category = "Loans & Debt Payments";
+      } else if (/\b(gift|present|donation|charity)\b/i.test(clean)) {
+        category = "Gifts & Charity";
+      }
 
-      parsedVoiceItem = { desc, amount, category, date: new Date().toISOString().split('T')[0] };
+      parsedVoiceItem = { 
+        desc, 
+        amount, 
+        category, 
+        date: new Date().toISOString().split('T')[0] 
+      };
 
       document.getElementById("voiceParsedDesc").textContent = desc;
       document.getElementById("voiceParsedAmount").textContent = formatKZT(amount);
@@ -1062,12 +1101,13 @@
     }
 
     // ==========================================
-    // INLINE CAP ADJUSTMENTS
+    // INLINE CAP ADJUSTMENTS (0 - 20,000,000 ₸)
     // ==========================================
     function updateCategoryCapInline(catId, newCapVal) {
       const target = categories.find(c => c.id === catId);
       if (!target) return;
-      target.budget = Math.max(0, parseFloat(newCapVal) || 0);
+      const val = parseFloat(newCapVal);
+      target.budget = Math.min(Math.max(0, isNaN(val) ? 0 : val), 20000000);
       saveState();
       renderDashboard();
     }
@@ -1099,7 +1139,7 @@
             <span>Spent: <strong class="text-slate-800">${formatKZT(spent)}</strong></span>
             <div class="flex items-center space-x-1">
               <span>Cap:</span>
-              <input type="number" step="1000" value="${budget}" onblur="updateCategoryCapInline('${cat.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" class="w-24 px-1.5 py-0.5 border border-slate-300 rounded text-right font-bold text-slate-700 bg-white" title="Click to adjust cap" />
+              <input type="number" step="any" min="0" max="20000000" value="${budget}" onblur="updateCategoryCapInline('${cat.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" class="w-24 px-1.5 py-0.5 border border-slate-300 rounded text-right font-bold text-slate-700 bg-white" title="Click to adjust cap (0 - 20M)" />
               <span>₸</span>
             </div>
           </div>
@@ -1317,27 +1357,35 @@
       if (lower.includes("magnum")) merchant = "Magnum Daily";
       else if (lower.includes("small")) merchant = "Small Supermarket";
       else if (lower.includes("yandex")) merchant = "Yandex Go";
-      else if (lower.includes("аптека")) merchant = "Europharma";
+      else if (lower.includes("аптека") || lower.includes("pharmacy")) merchant = "Pharmacy";
       document.getElementById("extractedDesc").value = merchant;
 
       let amount = 0;
       const match = text.match(/(?:итог|total|сумма)[\s:]*([0-9\s.,]+)/i);
       if (match && match[1]) amount = parseFloat(match[1].replace(/[\s,]/g, ''));
       if (!amount) amount = 4500;
+      amount = Math.min(Math.max(amount, 1), 20000000);
       document.getElementById("extractedAmount").value = amount;
       document.getElementById("extractedDate").value = new Date().toISOString().split('T')[0];
 
       let cat = "Groceries";
-      if (lower.includes("аптека")) cat = "Healthcare & Pharmacy";
-      else if (lower.includes("yandex")) cat = "Transportation & Fuel";
+      if (lower.includes("аптека") || lower.includes("pharmacy")) cat = "Healthcare & Pharmacy";
+      else if (lower.includes("yandex") || lower.includes("taxi")) cat = "Transportation & Fuel";
       document.getElementById("extractedCategory").value = cat;
     }
 
     function confirmAddScannedExpense() {
+      const desc = document.getElementById("extractedDesc").value;
+      const amount = parseFloat(document.getElementById("extractedAmount").value);
+      if (isNaN(amount) || amount < 1 || amount > 20000000) {
+        alert("Please enter an amount between 1 and 20,000,000 ₸.");
+        return;
+      }
+
       expenses.push({
         id: Date.now(),
-        desc: document.getElementById("extractedDesc").value,
-        amount: parseFloat(document.getElementById("extractedAmount").value),
+        desc,
+        amount,
         category: document.getElementById("extractedCategory").value,
         date: document.getElementById("extractedDate").value,
         isAuto: false,
@@ -1378,12 +1426,18 @@
 
     document.getElementById("incomeForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      incomes.push({
-        id: Date.now(),
-        desc: document.getElementById("incDesc").value,
-        amount: parseFloat(document.getElementById("incAmount").value),
-        date: document.getElementById("incDate").value
-      });
+      const desc = document.getElementById("incDesc").value.trim();
+      const amount = parseFloat(document.getElementById("incAmount").value);
+      const date = document.getElementById("incDate").value;
+
+      if (!desc || isNaN(amount) || amount < 1 || amount > 20000000) {
+        alert("Please enter an amount between 1 and 20,000,000 ₸.");
+        return;
+      }
+
+      incomes.push({ id: Date.now(), desc, amount, date });
+      document.getElementById("incDesc").value = "";
+      document.getElementById("incAmount").value = "";
       saveState();
       renderIncomeView();
     });
@@ -1411,12 +1465,22 @@
 
     document.getElementById("addRecurringForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      const desc = document.getElementById("recDesc").value.trim();
+      const amount = parseFloat(document.getElementById("recAmount").value);
+      const day = parseInt(document.getElementById("recDay").value);
+      const category = document.getElementById("recCategorySelect").value;
+
+      if (!desc || isNaN(amount) || amount < 1 || amount > 20000000) {
+        alert("Please enter an amount between 1 and 20,000,000 ₸.");
+        return;
+      }
+
       recurring.push({
         id: `rec-${Date.now()}`,
-        desc: document.getElementById("recDesc").value,
-        amount: parseFloat(document.getElementById("recAmount").value),
-        day: parseInt(document.getElementById("recDay").value),
-        category: document.getElementById("recCategorySelect").value,
+        desc,
+        amount,
+        day,
+        category,
         lastMonthLogged: ""
       });
       saveState();
@@ -1436,7 +1500,7 @@
           </div>
           <div class="flex items-center space-x-1">
             <span class="text-slate-400">Cap:</span>
-            <input type="number" step="1000" value="${c.budget}" onblur="updateCategoryCapInline('${c.id}', this.value)" class="w-24 px-1.5 py-0.5 border border-slate-300 rounded text-right font-bold text-slate-700 bg-white" />
+            <input type="number" step="any" min="0" max="20000000" value="${c.budget}" onblur="updateCategoryCapInline('${c.id}', this.value)" class="w-24 px-1.5 py-0.5 border border-slate-300 rounded text-right font-bold text-slate-700 bg-white" title="Cap: 0 - 20,000,000 ₸" />
             <span>₸</span>
           </div>
         `;
@@ -1462,10 +1526,14 @@
 
     document.getElementById("addCategoryForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      const name = document.getElementById("newCatName").value.trim();
+      const budget = parseFloat(document.getElementById("newCatBudget").value) || 0;
+      if (!name) return;
+
       categories.push({
         id: `cat-${Date.now()}`,
-        name: document.getElementById("newCatName").value,
-        budget: parseFloat(document.getElementById("newCatBudget").value) || 0,
+        name,
+        budget: Math.min(Math.max(0, budget), 20000000),
         color: document.getElementById("newCatColor").value
       });
       saveState();
@@ -1474,12 +1542,22 @@
 
     document.getElementById("expenseForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      const desc = document.getElementById("desc").value.trim();
+      const amount = parseFloat(document.getElementById("amount").value);
+      const category = document.getElementById("categorySelect").value;
+      const date = document.getElementById("expDate").value;
+
+      if (!desc || isNaN(amount) || amount < 1 || amount > 20000000 || !category) {
+        alert("Please enter an amount between 1 and 20,000,000 ₸.");
+        return;
+      }
+
       expenses.push({
         id: Date.now(),
-        desc: document.getElementById("desc").value,
-        amount: parseFloat(document.getElementById("amount").value),
-        date: document.getElementById("expDate").value,
-        category: document.getElementById("categorySelect").value,
+        desc,
+        amount,
+        date,
+        category,
         isAuto: false,
         receiptImg: null
       });
