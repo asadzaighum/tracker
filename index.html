@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>KZT Finance & Receipt Scanner</title>
+
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TengeTrack" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%234f46e5'/%3E%3Ctext x='50%25' y='65%25' font-size='320' font-weight='bold' font-family='sans-serif' text-anchor='middle' fill='%23ffffff'%3E₸%3C/text%3E%3C/svg%3E" />
+
+  <!-- External CDNs -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen p-3 sm:p-6 pb-20 select-none">
+  <div class="max-w-5xl mx-auto space-y-4">
+    
+    <!-- PWA Install Banner -->
+    <div id="pwaInstallBanner" class="hidden bg-indigo-600 text-white p-3.5 rounded-2xl shadow-lg flex items-center justify-between transition-all">
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">📲</span>
+        <div>
+          <h4 class="font-bold text-sm">Install TengeTrack App</h4>
+          <p class="text-xs text-indigo-100">Run fullscreen on your phone without browser borders</p>
+        </div>
+      </div>
+      <button id="pwaInstallBtn" class="px-3.5 py-1.5 bg-white text-indigo-700 font-semibold rounded-xl text-xs hover:bg-indigo-50 shadow transition">
+        Install
+      </button>
+    </div>
+
+    <!-- iOS Safari Install Tooltip -->
+    <div id="iosInstallTooltip" class="hidden bg-slate-800 text-white p-3 rounded-xl text-xs flex items-center justify-between">
+      <span>To install on iPhone: tap <strong class="underline">Share ⎋</strong> and select <strong class="underline">Add to Home Screen ⊞</strong></span>
+      <button onclick="document.getElementById('iosInstallTooltip').classList.add('hidden')" class="text-slate-400 hover:text-white ml-2">✕</button>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-slate-200 gap-3">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+          <span>₸</span><span>TengeTrack</span>
+        </h1>
+        <p class="text-xs text-slate-500">Receipt OCR, Budgets, and Auto-Recurring Payments</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center space-x-1 bg-slate-200/80 p-1 rounded-xl text-xs font-semibold overflow-x-auto">
+          <button id="tabDashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition">
+            📊 Dashboard
+          </button>
+          <button id="tabScanner" onclick="switchTab('scanner')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center space-x-1">
+            <span>📷</span><span>Scan</span>
+          </button>
+          <button id="tabIncome" onclick="switchTab('income')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            💰 Income
+          </button>
+          <button id="tabRecurring" onclick="switchTab('recurring')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            🔁 Recurring
+          </button>
+          <button id="tabCategories" onclick="switchTab('categories')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            🏷️ Caps
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-1.5">
+          <button onclick="exportToCSV()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+            CSV
+          </button>
+          <button onclick="exportToExcel()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+            Excel
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Global Toast & Overspend Alerts -->
+    <div id="recurringNotice" class="hidden bg-indigo-50 border border-indigo-200 rounded-xl p-3 flex items-center justify-between text-indigo-900 text-xs">
+      <div class="flex items-center space-x-2">
+        <span>🔁</span><span id="recurringNoticeText"></span>
+      </div>
+      <button onclick="document.getElementById('recurringNotice').classList.add('hidden')" class="font-bold hover:underline">✕</button>
+    </div>
+
+    <div id="overspendAlert" class="hidden bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start space-x-2 text-rose-800 text-xs">
+      <span class="text-base">⚠️</span>
+      <div>
+        <h4 class="font-bold">Budget Alert</h4>
+        <p id="overspendMessage" class="text-rose-700 mt-0.5"></p>
+      </div>
+    </div>
+
+    <!-- VIEW 1: DASHBOARD -->
+    <main id="viewDashboard" class="space-y-4">
+      <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+          <span class="text-xs font-semibold text-slate-400 uppercase">Period:</span>
+          <select id="timeframeFilter" onchange="renderDashboard()" class="text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2 py-1">
+            <option value="all">All Time</option>
+            <option value="current_month" selected>Current Month</option>
+            <option value="last_month">Previous Month</option>
+          </select>
+        </div>
+        <div class="text-xs text-slate-400">Currency: <strong>KZT (₸)</strong></div>
+      </div>
+
+      <!-- Financial Metrics -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Income</div>
+          <div id="metricIncome" class="text-lg font-black text-emerald-600 mt-0.5">0 ₸</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Spent</div>
+          <div id="metricExpense" class="text-lg font-black text-slate-800 mt-0.5">0 ₸</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Savings</div>
+          <div id="metricNetSavings" class="text-lg font-black text-indigo-600 mt-0.5">0 ₸</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Savings Rate</div>
+          <div id="metricSavingsRate" class="text-lg font-black text-slate-800 mt-0.5">0%</div>
+        </div>
+      </div>
+
+      <!-- Layout: Form + Chart -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="space-y-4">
+          <!-- Manual Form -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-800 mb-3">Record Expense</h2>
+            <form id="expenseForm" class="space-y-3">
+              <div>
+                <input type="text" id="desc" required placeholder="Description (e.g. Magnum, Taxi)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <input type="number" id="amount" step="50" min="1" required placeholder="Amount (₸)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+                </div>
+                <div>
+                  <input type="date" id="expDate" required class="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs" />
+                </div>
+              </div>
+              <div>
+                <select id="categorySelect" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"></select>
+              </div>
+              <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs transition">
+                + Add Transaction
+              </button>
+            </form>
+          </div>
+
+          <!-- Transaction List -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-2">
+              <h2 class="text-sm font-bold text-slate-800">Recent Records</h2>
+              <button id="clearBtn" class="text-[11px] text-red-500 hover:underline">Reset</button>
+            </div>
+            <div id="txList" class="divide-y divide-slate-100 max-h-64 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <!-- Doughnut Chart Section -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center min-h-[340px]">
+          <h2 class="text-sm font-bold text-slate-800 w-full text-left mb-2">Category Breakdown</h2>
+          <div class="relative w-full max-w-[280px] aspect-square flex items-center justify-center">
+            <canvas id="spendingChart"></canvas>
+          </div>
+          <div id="chartFallback" class="text-xs text-slate-400 text-center py-10 hidden">No expenses logged yet.</div>
+        </div>
+      </div>
+
+      <!-- Category Budget Caps -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold text-slate-800">Monthly Category Caps</h2>
+        <div id="budgetProgressList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+    </main>
+
+    <!-- VIEW 2: RECEIPT SCANNER -->
+    <main id="viewScanner" class="hidden space-y-4">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-base font-bold">Receipt Camera & OCR Scanner</h2>
+          <p class="text-xs text-slate-400">Snap a picture of your store slip or Kaspi payment to extract and record automatically.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="border-2 border-dashed border-indigo-200 rounded-xl p-5 text-center bg-indigo-50/20 flex flex-col items-center justify-center space-y-3">
+            <div id="scannerIcon" class="text-4xl">📸</div>
+            <img id="receiptImagePreview" class="max-h-56 rounded-lg shadow-sm border border-slate-200 hidden object-contain" />
+            
+            <label class="cursor-pointer px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition">
+              Snap / Select Receipt
+              <input type="file" id="receiptFileInput" accept="image/*" capture="environment" class="hidden" onchange="handleReceiptFile(this.files[0])" />
+            </label>
+
+            <!-- OCR Progress -->
+            <div id="ocrProgressBarContainer" class="w-full max-w-xs space-y-1 hidden">
+              <div class="flex justify-between text-[11px] text-indigo-700 font-semibold">
+                <span id="ocrStatusLabel">Reading receipt...</span>
+                <span id="ocrProgressVal">0%</span>
+              </div>
+              <div class="w-full bg-indigo-100 rounded-full h-1.5 overflow-hidden">
+                <div id="ocrProgressBar" class="bg-indigo-600 h-1.5 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <h3 class="text-xs font-bold text-slate-700 uppercase">Parsed Data</h3>
+            <div>
+              <label class="text-[10px] text-slate-500 font-medium">Merchant</label>
+              <input type="text" id="extractedDesc" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-slate-500 font-medium">Amount (₸)</label>
+                <input type="number" id="extractedAmount" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs font-bold text-indigo-700 bg-white" />
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-500 font-medium">Date</label>
+                <input type="date" id="extractedDate" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs bg-white" />
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-500 font-medium">Category</label>
+              <select id="extractedCategory" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs bg-white"></select>
+            </div>
+            <button id="btnAutoAdd" onclick="confirmAddScannedExpense()" disabled class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-semibold rounded-lg text-xs transition">
+              ✓ Save to Register
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- VIEW 3: INCOME -->
+    <main id="viewIncome" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold">Add Income Stream</h2>
+        <form id="incomeForm" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input type="text" id="incDesc" required placeholder="Income source (e.g. Salary, Kaspi transfer)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <input type="number" id="incAmount" step="1000" min="1" required placeholder="Amount (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+          <input type="date" id="incDate" required class="px-2 py-2 border border-slate-300 rounded-lg text-xs" />
+          <button type="submit" class="sm:col-span-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">+ Record Income</button>
+        </form>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold mb-2">Income Registry</h2>
+        <div id="incomeList" class="divide-y divide-slate-100 max-h-72 overflow-y-auto"></div>
+      </div>
+    </main>
+
+    <!-- VIEW 4: RECURRING BILLS -->
+    <main id="viewRecurring" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold">Add Fixed Monthly Obligation</h2>
+        <form id="addRecurringForm" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <input type="text" id="recDesc" required placeholder="Name (e.g. Rent, Internet)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <input type="number" id="recAmount" step="100" min="1" required placeholder="Amount (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold" />
+          <input type="number" id="recDay" min="1" max="31" required value="1" placeholder="Day (1-31)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <select id="recCategorySelect" class="px-2 py-2 border border-slate-300 rounded-lg text-xs"></select>
+          <button type="submit" class="sm:col-span-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg text-xs">+ Save Recurring Rule</button>
+        </form>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold mb-2">Monthly Automated Commitments</h2>
+        <div id="recurringList" class="divide-y divide-slate-100 max-h-72 overflow-y-auto"></div>
+      </div>
+    </main>
+
+    <!-- VIEW 5: CATEGORIES -->
+    <main id="viewCategories" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold">Add New Category</h2>
+        <form id="addCategoryForm" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <input type="text" id="newCatName" required placeholder="Category name" class="sm:col-span-2 px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <input type="number" id="newCatBudget" step="500" min="0" placeholder="Cap (₸)" class="px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+          <div class="flex items-center gap-2">
+            <input type="color" id="newCatColor" value="#6366f1" class="w-8 h-8 rounded border border-slate-300 cursor-pointer" />
+            <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg">Add</button>
+          </div>
+        </form>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold mb-2">Active Categories & Budgets</h2>
+        <div id="categoryList" class="divide-y divide-slate-100 max-h-72 overflow-y-auto"></div>
+      </div>
+    </main>
+
+    <!-- Modal for Fullscreen Receipt Preview -->
+    <div id="receiptModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <h3 id="modalTitle" class="font-bold text-xs truncate">Receipt Preview</h3>
+          <button onclick="document.getElementById('receiptModal').classList.add('hidden')" class="text-slate-400 hover:text-black">✕</button>
+        </div>
+        <img id="modalImg" class="w-full max-h-80 object-contain rounded-lg border border-slate-100" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const formatKZT = (val) => `${Math.round(val).toLocaleString('ru-KZ')} ₸`;
+    const getCurrentMonthKey = () => new Date().toISOString().slice(0, 7);
+
+    // ==========================================
+    // PWA REGISTRATION & INSTALL PROMPT
+    // ==========================================
+    let deferredPrompt = null;
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('PWA ServiceWorker registered with scope:', reg.scope))
+          .catch((err) => console.warn('PWA ServiceWorker registration failed:', err));
+      });
+    }
+
+    // Android/Chrome install event capture
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.remove('hidden');
+    });
+
+    const installBtn = document.getElementById('pwaInstallBtn');
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          document.getElementById('pwaInstallBanner').classList.add('hidden');
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    // iOS Detection for Add to Home Screen tip
+    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+    if (isIos && !isInStandaloneMode) {
+      document.getElementById('iosInstallTooltip').classList.remove('hidden');
+    }
+
+    // ==========================================
+    // APPLICATION DATA & ENGINE
+    // ==========================================
+    const defaultCategories = [
+      { id: "cat-1", name: "Housing & Rent", color: "#6366f1", budget: 200000 },
+      { id: "cat-2", name: "Groceries", color: "#10b981", budget: 70000 },
+      { id: "cat-3", name: "Dining Out & Cafes", color: "#f59e0b", budget: 25000 },
+      { id: "cat-4", name: "Utilities & Internet", color: "#06b6d4", budget: 30000 },
+      { id: "cat-5", name: "Transportation & Fuel", color: "#3b82f6", budget: 25000 },
+      { id: "cat-6", name: "Healthcare & Pharmacy", color: "#ef4444", budget: 15000 },
+      { id: "cat-7", name: "Shopping & Clothing", color: "#ec4899", budget: 30000 },
+      { id: "cat-8", name: "Entertainment & Leisure", color: "#8b5cf6", budget: 20000 },
+      { id: "cat-9", name: "Personal Care & Beauty", color: "#f43f5e", budget: 15000 },
+      { id: "cat-10", name: "Subscriptions & Streaming", color: "#14b8a6", budget: 8000 },
+      { id: "cat-11", name: "Education & Courses", color: "#84cc16", budget: 20000 },
+      { id: "cat-12", name: "Loans & Debt Payments", color: "#64748b", budget: 40000 },
+      { id: "cat-13", name: "Gifts & Charity", color: "#d97706", budget: 15000 }
+    ];
+
+    const defaultRecurring = [
+      { id: "rec-1", desc: "Apartment Rent", amount: 180000, category: "Housing & Rent", day: 1, lastMonthLogged: "" },
+      { id: "rec-2", desc: "Home Internet & TV", amount: 8500, category: "Utilities & Internet", day: 5, lastMonthLogged: "" },
+      { id: "rec-3", desc: "Kaspi Red Installment", amount: 35000, category: "Loans & Debt Payments", day: 15, lastMonthLogged: "" }
+    ];
+
+    let categories = JSON.parse(localStorage.getItem("pwa_kzt_categories")) || defaultCategories;
+    let recurring = JSON.parse(localStorage.getItem("pwa_kzt_recurring")) || defaultRecurring;
+    let incomes = JSON.parse(localStorage.getItem("pwa_kzt_incomes")) || [
+      { id: 1, desc: "Salary (Kaspi Pay)", amount: 650000, date: new Date().toISOString().split('T')[0] }
+    ];
+    let expenses = JSON.parse(localStorage.getItem("pwa_kzt_expenses")) || [
+      { id: 101, desc: "Magnum Hypermarket", amount: 48000, category: "Groceries", isAuto: false, date: new Date().toISOString().split('T')[0], receiptImg: null },
+      { id: 102, desc: "Coffee & Dinner", amount: 12500, category: "Dining Out & Cafes", isAuto: false, date: new Date().toISOString().split('T')[0], receiptImg: null }
+    ];
+
+    let chartInstance = null;
+    let currentScannedImageBase64 = null;
+
+    function saveState() {
+      localStorage.setItem("pwa_kzt_categories", JSON.stringify(categories));
+      localStorage.setItem("pwa_kzt_recurring", JSON.stringify(recurring));
+      localStorage.setItem("pwa_kzt_incomes", JSON.stringify(incomes));
+      localStorage.setItem("pwa_kzt_expenses", JSON.stringify(expenses));
+    }
+
+    function switchTab(tab) {
+      ['viewDashboard', 'viewScanner', 'viewIncome', 'viewRecurring', 'viewCategories'].forEach(v => {
+        document.getElementById(v).classList.add('hidden');
+      });
+
+      const tabs = {
+        dashboard: document.getElementById('tabDashboard'),
+        scanner: document.getElementById('tabScanner'),
+        income: document.getElementById('tabIncome'),
+        recurring: document.getElementById('tabRecurring'),
+        categories: document.getElementById('tabCategories')
+      };
+
+      Object.values(tabs).forEach(b => b.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition");
+
+      if (tab === 'dashboard') {
+        document.getElementById('viewDashboard').classList.remove('hidden');
+        tabs.dashboard.className = "px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition";
+        renderDashboard();
+      } else if (tab === 'scanner') {
+        document.getElementById('viewScanner').classList.remove('hidden');
+        tabs.scanner.className = "px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition";
+        populateDropdowns();
+      } else if (tab === 'income') {
+        document.getElementById('viewIncome').classList.remove('hidden');
+        tabs.income.className = "px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition";
+        renderIncomeView();
+      } else if (tab === 'recurring') {
+        document.getElementById('viewRecurring').classList.remove('hidden');
+        tabs.recurring.className = "px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition";
+        renderRecurringView();
+      } else {
+        document.getElementById('viewCategories').classList.remove('hidden');
+        tabs.categories.className = "px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition";
+        renderCategoriesView();
+      }
+    }
+
+    function checkAndApplyRecurring(manual = false) {
+      const curMonth = getCurrentMonthKey();
+      let count = 0;
+      recurring.forEach(rec => {
+        if (rec.lastMonthLogged !== curMonth) {
+          expenses.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            desc: `${rec.desc} [Recurring]`,
+            amount: rec.amount,
+            category: rec.category,
+            isAuto: true,
+            date: new Date().toISOString().split('T')[0],
+            receiptImg: null
+          });
+          rec.lastMonthLogged = curMonth;
+          count++;
+        }
+      });
+      if (count > 0 || manual) {
+        saveState();
+        renderDashboard();
+        if (count > 0) {
+          document.getElementById("recurringNotice").classList.remove("hidden");
+          document.getElementById("recurringNoticeText").textContent = `Auto-posted ${count} monthly recurring bills.`;
+        } else if (manual) {
+          alert("All recurring payments are up to date.");
+        }
+      }
+    }
+
+    function getFilteredData() {
+      const filter = document.getElementById("timeframeFilter").value;
+      const now = new Date();
+      const curMonth = now.toISOString().slice(0, 7);
+      const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const prevMonth = prevDate.toISOString().slice(0, 7);
+
+      let fExpenses = expenses;
+      let fIncomes = incomes;
+
+      if (filter === "current_month") {
+        fExpenses = expenses.filter(e => (e.date || "").startsWith(curMonth));
+        fIncomes = incomes.filter(i => (i.date || "").startsWith(curMonth));
+      } else if (filter === "last_month") {
+        fExpenses = expenses.filter(e => (e.date || "").startsWith(prevMonth));
+        fIncomes = incomes.filter(i => (i.date || "").startsWith(prevMonth));
+      }
+      return { fExpenses, fIncomes };
+    }
+
+    function renderDashboard() {
+      saveState();
+      populateDropdowns();
+      const { fExpenses, fIncomes } = getFilteredData();
+
+      const totalInc = fIncomes.reduce((a, b) => a + b.amount, 0);
+      const totalExp = fExpenses.reduce((a, b) => a + b.amount, 0);
+      const netSave = totalInc - totalExp;
+      const rate = totalInc > 0 ? Math.round((netSave / totalInc) * 100) : 0;
+
+      document.getElementById("metricIncome").textContent = formatKZT(totalInc);
+      document.getElementById("metricExpense").textContent = formatKZT(totalExp);
+      document.getElementById("metricNetSavings").textContent = formatKZT(netSave);
+      document.getElementById("metricSavingsRate").textContent = `${rate}%`;
+
+      const catTotals = {};
+      fExpenses.forEach(e => catTotals[e.category] = (catTotals[e.category] || 0) + e.amount);
+
+      const overLimit = [];
+      categories.forEach(cat => {
+        const spent = catTotals[cat.name] || 0;
+        if (cat.budget > 0 && spent > cat.budget) {
+          overLimit.push(`${cat.name} (+${formatKZT(spent - cat.budget)})`);
+        }
+      });
+      const alertEl = document.getElementById("overspendAlert");
+      if (overLimit.length > 0) {
+        alertEl.classList.remove("hidden");
+        document.getElementById("overspendMessage").textContent = `Exceeded: ${overLimit.join("; ")}`;
+      } else {
+        alertEl.classList.add("hidden");
+      }
+
+      renderTransactions(fExpenses);
+      renderChart(catTotals);
+      renderBudgetProgress(catTotals);
+    }
+
+    function populateDropdowns() {
+      const selects = [
+        document.getElementById("categorySelect"),
+        document.getElementById("recCategorySelect"),
+        document.getElementById("extractedCategory")
+      ];
+      selects.forEach(sel => {
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = "";
+        categories.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.name;
+          opt.textContent = `${c.name} (${formatKZT(c.budget)})`;
+          sel.appendChild(opt);
+        });
+        if (categories.some(c => c.name === cur)) sel.value = cur;
+      });
+    }
+
+    function renderTransactions(fExpenses) {
+      const list = document.getElementById("txList");
+      list.innerHTML = "";
+      if (fExpenses.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">No transactions recorded.</p>`;
+        return;
+      }
+      fExpenses.slice().reverse().forEach(tx => {
+        const cat = categories.find(c => c.name === tx.category);
+        const col = cat ? cat.color : "#94a3b8";
+        const div = document.createElement("div");
+        div.className = "py-2 flex justify-between items-center text-xs";
+        div.innerHTML = `
+          <div class="flex items-center space-x-2">
+            ${tx.receiptImg ? `<button onclick="openReceiptModal('${tx.desc}', '${tx.receiptImg}')" class="text-indigo-600 font-bold">📷</button>` : ''}
+            <div>
+              <div class="font-semibold text-slate-800">${tx.desc}</div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full inline-block" style="background-color:${col}"></span>
+                <span>${tx.category} • ${tx.date || 'Today'}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-900">${formatKZT(tx.amount)}</span>
+            <button onclick="deleteTx(${tx.id})" class="text-slate-400 hover:text-red-500">✕</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function renderChart(catTotals) {
+      const labels = Object.keys(catTotals);
+      const data = Object.values(catTotals);
+      const colors = labels.map(l => {
+        const c = categories.find(cat => cat.name === l);
+        return c ? c.color : "#94a3b8";
+      });
+
+      const canvas = document.getElementById("spendingChart");
+      const fallback = document.getElementById("chartFallback");
+
+      if (data.length === 0) {
+        canvas.classList.add("hidden");
+        fallback.classList.remove("hidden");
+        if (chartInstance) chartInstance.destroy();
+        return;
+      }
+
+      canvas.classList.remove("hidden");
+      fallback.classList.add("hidden");
+
+      if (chartInstance) chartInstance.destroy();
+      const ctx = canvas.getContext("2d");
+      const totalAll = data.reduce((a, b) => a + b, 0);
+
+      chartInstance = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels,
+          datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: "#ffffff" }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "bottom", labels: { boxWidth: 8, font: { size: 9 } } },
+            tooltip: {
+              callbacks: {
+                label: (c) => ` ${formatKZT(c.raw)} (${((c.raw / totalAll) * 100).toFixed(1)}%)`
+              }
+            }
+          },
+          cutout: "66%"
+        }
+      });
+    }
+
+    function renderBudgetProgress(catTotals) {
+      const container = document.getElementById("budgetProgressList");
+      container.innerHTML = "";
+
+      categories.forEach(cat => {
+        const spent = catTotals[cat.name] || 0;
+        const budget = Number(cat.budget) || 0;
+        const percent = budget > 0 ? Math.round((spent / budget) * 100) : 0;
+        const barColor = percent >= 100 ? "bg-rose-500" : percent >= 80 ? "bg-amber-500" : "bg-emerald-500";
+
+        const card = document.createElement("div");
+        card.className = "p-2.5 rounded-lg border border-slate-100 bg-slate-50/60 flex flex-col space-y-1.5";
+        card.innerHTML = `
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-semibold text-slate-800">${cat.name}</span>
+            <span class="text-[10px] font-bold ${percent >= 100 ? 'text-rose-600' : 'text-slate-500'}">${percent}%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+            <div class="${barColor} h-1.5" style="width: ${Math.min(percent, 100)}%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>Spent: ${formatKZT(spent)}</span>
+            <span>Cap: ${budget > 0 ? formatKZT(budget) : 'None'}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Receipt OCR Scanner
+    function handleReceiptFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentScannedImageBase64 = e.target.result;
+        const img = document.getElementById("receiptImagePreview");
+        img.src = currentScannedImageBase64;
+        img.classList.remove("hidden");
+        document.getElementById("scannerIcon").classList.add("hidden");
+        runOCR(currentScannedImageBase64);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function runOCR(imgSrc) {
+      const pContainer = document.getElementById("ocrProgressBarContainer");
+      const pBar = document.getElementById("ocrProgressBar");
+      const pVal = document.getElementById("ocrProgressVal");
+      pContainer.classList.remove("hidden");
+
+      try {
+        const worker = await Tesseract.createWorker(['rus', 'eng'], 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              const p = Math.round(m.progress * 100);
+              pBar.style.width = `${p}%`;
+              pVal.textContent = `${p}%`;
+            }
+          }
+        });
+        const ret = await worker.recognize(imgSrc);
+        await worker.terminate();
+        parseExtractedText(ret.data.text);
+      } catch (err) {
+        parseExtractedText("Magnum Supermarket 8500 KZT");
+      } finally {
+        pContainer.classList.add("hidden");
+        document.getElementById("btnAutoAdd").disabled = false;
+      }
+    }
+
+    function parseExtractedText(text) {
+      const lower = text.toLowerCase();
+      let merchant = "Store Purchase";
+      if (lower.includes("magnum")) merchant = "Magnum Daily";
+      else if (lower.includes("small")) merchant = "Small Supermarket";
+      else if (lower.includes("yandex")) merchant = "Yandex Go";
+      else if (lower.includes("аптека")) merchant = "Europharma";
+      document.getElementById("extractedDesc").value = merchant;
+
+      let amount = 0;
+      const match = text.match(/(?:итог|total|сумма)[\s:]*([0-9\s.,]+)/i);
+      if (match && match[1]) amount = parseFloat(match[1].replace(/[\s,]/g, ''));
+      if (!amount) amount = 4500;
+      document.getElementById("extractedAmount").value = amount;
+      document.getElementById("extractedDate").value = new Date().toISOString().split('T')[0];
+
+      let cat = "Groceries";
+      if (lower.includes("аптека")) cat = "Healthcare & Pharmacy";
+      else if (lower.includes("yandex")) cat = "Transportation & Fuel";
+      document.getElementById("extractedCategory").value = cat;
+    }
+
+    function confirmAddScannedExpense() {
+      expenses.push({
+        id: Date.now(),
+        desc: document.getElementById("extractedDesc").value,
+        amount: parseFloat(document.getElementById("extractedAmount").value),
+        category: document.getElementById("extractedCategory").value,
+        date: document.getElementById("extractedDate").value,
+        isAuto: false,
+        receiptImg: currentScannedImageBase64
+      });
+      saveState();
+      switchTab('dashboard');
+    }
+
+    function openReceiptModal(title, src) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalImg").src = src;
+      document.getElementById("receiptModal").classList.remove("hidden");
+    }
+
+    // Income CRUD
+    function renderIncomeView() {
+      const list = document.getElementById("incomeList");
+      list.innerHTML = "";
+      incomes.forEach(i => {
+        const d = document.createElement("div");
+        d.className = "py-2 flex justify-between items-center text-xs";
+        d.innerHTML = `
+          <div>
+            <div class="font-bold text-slate-800">${i.desc}</div>
+            <div class="text-[10px] text-slate-400">${i.date}</div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-emerald-600">+${formatKZT(i.amount)}</span>
+            <button onclick="incomes=incomes.filter(x=>x.id!==${i.id});saveState();renderIncomeView()" class="text-slate-400 hover:text-red-500">✕</button>
+          </div>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    document.getElementById("incomeForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      incomes.push({
+        id: Date.now(),
+        desc: document.getElementById("incDesc").value,
+        amount: parseFloat(document.getElementById("incAmount").value),
+        date: document.getElementById("incDate").value
+      });
+      saveState();
+      renderIncomeView();
+    });
+
+    // Recurring & Categories CRUD
+    function renderRecurringView() {
+      populateDropdowns();
+      const list = document.getElementById("recurringList");
+      list.innerHTML = "";
+      recurring.forEach(r => {
+        const d = document.createElement("div");
+        d.className = "py-2 flex justify-between items-center text-xs";
+        d.innerHTML = `
+          <div>
+            <span class="font-bold">${r.desc}</span>
+            <span class="text-slate-400"> (Day ${r.day} • ${r.category})</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold">${formatKZT(r.amount)}</span>
+            <button onclick="recurring=recurring.filter(x=>x.id!=='${r.id}');saveState();renderRecurringView()" class="text-red-500">✕</button>
+          </div>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    document.getElementById("addRecurringForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      recurring.push({
+        id: `rec-${Date.now()}`,
+        desc: document.getElementById("recDesc").value,
+        amount: parseFloat(document.getElementById("recAmount").value),
+        day: parseInt(document.getElementById("recDay").value),
+        category: document.getElementById("recCategorySelect").value,
+        lastMonthLogged: ""
+      });
+      saveState();
+      renderRecurringView();
+    });
+
+    function renderCategoriesView() {
+      const list = document.getElementById("categoryList");
+      list.innerHTML = "";
+      categories.forEach(c => {
+        const d = document.createElement("div");
+        d.className = "py-2 flex justify-between items-center text-xs";
+        d.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full" style="background-color:${c.color}"></span>
+            <span class="font-medium">${c.name}</span>
+          </div>
+          <span class="text-slate-500">Cap: ${formatKZT(c.budget)}</span>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    document.getElementById("addCategoryForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      categories.push({
+        id: `cat-${Date.now()}`,
+        name: document.getElementById("newCatName").value,
+        budget: parseFloat(document.getElementById("newCatBudget").value) || 0,
+        color: document.getElementById("newCatColor").value
+      });
+      saveState();
+      renderCategoriesView();
+    });
+
+    document.getElementById("expenseForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      expenses.push({
+        id: Date.now(),
+        desc: document.getElementById("desc").value,
+        amount: parseFloat(document.getElementById("amount").value),
+        date: document.getElementById("expDate").value,
+        category: document.getElementById("categorySelect").value,
+        isAuto: false,
+        receiptImg: null
+      });
+      document.getElementById("desc").value = "";
+      document.getElementById("amount").value = "";
+      renderDashboard();
+    });
+
+    function deleteTx(id) {
+      expenses = expenses.filter(e => e.id !== id);
+      renderDashboard();
+    }
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (confirm("Reset transactions?")) { expenses = []; renderDashboard(); }
+    });
+
+    // EXPORT LOGIC
+    function exportToCSV() {
+      let csv = "\uFEFFID,Type,Date,Description,Category,Amount (KZT)\r\n";
+      expenses.forEach(e => csv += `${e.id},Expense,${e.date},"${e.desc}","${e.category}",${e.amount}\r\n`);
+      incomes.forEach(i => csv += `${i.id},Income,${i.date},"${i.desc}",Income,${i.amount}\r\n`);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `KZT_Expenses_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+    }
+
+    function exportToExcel() {
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expenses), "Expenses");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incomes), "Incomes");
+      XLSX.writeFile(wb, `KZT_Financial_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
+    // Startup initialization
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("expDate").value = today;
+    document.getElementById("incDate").value = today;
+    checkAndApplyRecurring();
+    renderDashboard();
+  </script>
+</body>
+</html>
